@@ -1,0 +1,107 @@
+import { DataSource, QueryRunner } from 'typeorm';
+import { databaseOptions } from '../src/database/database.config';
+import { PlanEntity } from '../src/modules/plans/infrastructure/persistence/plan.entity';
+
+describe('PostgreSQL schema (requires migrated test database)', () => {
+  let source: DataSource;
+  let runner: QueryRunner;
+  let plantId: number;
+  let fruitId: number;
+  let userId: number;
+  beforeAll(async () => {
+    if (!process.env.DB_NAME?.endsWith('_test'))
+      throw new Error('Use a dedicated DB_NAME ending in _test');
+    source = new DataSource(databaseOptions());
+    await source.initialize();
+  });
+  beforeEach(async () => {
+    runner = source.createQueryRunner();
+    await runner.startTransaction();
+    const plants = await runner.manager.query<{ id: number }[]>(
+      `SELECT id FROM planta WHERE nombre = 'Piura'`,
+    );
+    const fruits = await runner.manager.query<{ id: number }[]>(
+      `SELECT id FROM fruta WHERE nombre = 'Uva'`,
+    );
+    plantId = plants[0].id;
+    fruitId = fruits[0].id;
+    const users = await runner.manager.query<{ id: number }[]>(
+      `INSERT INTO usuario ("rolId", "plantaId", nombre, email, "passwordHash") SELECT id, $1, 'Test', 'schema-test@example.com', 'test-hash' FROM rol WHERE nombre = 'PLANIFICADOR' RETURNING id`,
+      [plantId],
+    );
+    userId = users[0].id;
+  });
+  afterEach(async () => {
+    await runner?.rollbackTransaction();
+    await runner?.release();
+  });
+  afterAll(async () => {
+    if (source?.isInitialized) await source.destroy();
+  });
+
+  async function expectInvalid(sql: string, args: unknown[] = []) {
+    await runner.query('SAVEPOINT invalid_input');
+    await expect(runner.query(sql, args)).rejects.toThrow();
+    await runner.query('ROLLBACK TO SAVEPOINT invalid_input');
+  }
+  async function createPlan() {
+    const plans = await runner.manager.query<{ id: number }[]>(
+      `INSERT INTO plan ("plantaId", "frutaId", anio, semana, "escenarioCosecha", "parametrosUsados", "parametrosSobrescritos", estado, "creadoPorId") SELECT $1, $2, 2026, 42, 'PROYECTADA', jsonb_build_object('rendimientoPersonaHora', "rendimientoPersonaHora"::text, 'personalMaximo', "personalMaximo", 'horasJornada', "horasJornada"::text, 'horasExtraMax', "horasExtraMax"::text, 'horaInicio', "horaInicio"::text, 'factorEficiencia', "factorEficiencia"::text, 'toleranciaVolumen', "toleranciaVolumen"::text), false, 'APROBADO', $3 FROM planta WHERE id = $1 RETURNING id`,
+      [plantId, fruitId, userId],
+    );
+    return plans[0].id;
+  }
+  it('enforces harvest/commercial fields and ISO week, and prevents mutation', async () => {
+    const sql = `INSERT INTO proyeccion ("plantaId", "frutaId", tipo, anio, semana, fecha, cajas) VALUES ($1, $2, $3, 2026, 42, $4, 11180)`;
+    await expectInvalid(sql, [plantId, fruitId, 'COSECHA', null]);
+    await expectInvalid(sql, [plantId, fruitId, 'COMERCIAL', null]);
+    await expectInvalid(sql, [plantId, fruitId, 'COSECHA', '2026-01-01']);
+    await runner.query(sql, [plantId, fruitId, 'COSECHA', '2026-10-12']);
+    await expectInvalid(`UPDATE proyeccion SET cajas = 1`);
+    await expectInvalid(`DELETE FROM proyeccion`);
+  });
+  it('rejects duplicate active plans and retains the configuration snapshot', async () => {
+    const id = await createPlan();
+    await runner.query('SAVEPOINT duplicate_plan');
+    await expect(createPlan()).rejects.toThrow();
+    await runner.query('ROLLBACK TO SAVEPOINT duplicate_plan');
+    await runner.query(
+      `UPDATE planta SET "rendimientoPersonaHora" = 9 WHERE id = $1`,
+      [plantId],
+    );
+    const plan = await runner.manager.findOneByOrFail(PlanEntity, { id });
+    expect(Number(plan.parametersSnapshot.boxesPerWorkerHour)).toBe(5);
+    await expectInvalid(`UPDATE plan SET estado = 'RECHAZADO' WHERE id = $1`, [
+      id,
+    ]);
+  });
+  it('creates official plans as BORRADOR by default', async () => {
+    const id = await createPlan();
+    await runner.query(`UPDATE plan SET estado = DEFAULT WHERE id = $1`, [id]);
+    const plan = await runner.manager.findOneByOrFail(PlanEntity, { id });
+    expect(plan.status).toBe('BORRADOR');
+  });
+  it('enforces one jornada per day and supports negative closing differences', async () => {
+    const id = await createPlan();
+    const days = await runner.manager.query<{ id: number }[]>(
+      `INSERT INTO plan_dia ("planId", fecha, "cajasMeta", trabajadores, horas) VALUES ($1, '2026-10-12', 11180, 280, 9.98) RETURNING id`,
+      [id],
+    );
+    const day = days[0].id;
+    const sql = `INSERT INTO jornada ("planDiaId", "fechaInicio", "trabajadoresPresentes", diferencia) VALUES ($1, now(), 186, -100)`;
+    await runner.query(sql, [day]);
+    await expectInvalid(sql, [day]);
+    await expectInvalid(
+      `UPDATE plan_dia SET "horasActualizadas" = 12 WHERE id = $1`,
+      [day],
+    );
+    await runner.query(
+      `UPDATE plan_dia SET "horasActualizadas" = 12, "motivoAjuste" = 'PERSONAL_PRESENTE' WHERE id = $1`,
+      [day],
+    );
+  });
+  it('has no schema drift after applying migrations', async () => {
+    const diff = await source.driver.createSchemaBuilder().log();
+    expect(diff.upQueries).toEqual([]);
+  });
+});

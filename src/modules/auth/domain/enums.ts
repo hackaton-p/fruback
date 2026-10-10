@@ -1,0 +1,5 @@
+export enum RoleName {
+  PLANNER = 'PLANIFICADOR',
+  DEPUTY_MANAGER = 'SUBGERENTE',
+  SHIFT_MANAGER = 'JEFE_TURNO',
+}

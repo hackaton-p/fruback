@@ -1,98 +1,105 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Pura Fruit · Plan de Packing
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Base de persistencia del backend NestJS 11 + TypeORM 0.3 + PostgreSQL 17, basada en `contexto-plan-packing.md`. Requiere Node.js 24 y pnpm 11.10.0.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Alcance
 
-## Description
+Incluye las 13 entidades, relaciones, índices, restricciones, migraciones reversibles, catálogos iniciales, configuración compartida entre Nest y CLI, cálculo diario de dominio y contenedores. El único endpoint actual sigue siendo `GET /` (comprobación HTTP básica, no de disponibilidad de BD).
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Los endpoints funcionales, login JWT/bcrypt, guards, importación de Excel, casos de uso de aprobación/ejecución, validaciones entre agregados y cálculo de alertas son trabajo posterior. El campo `passwordHash` se excluye de consultas normales; el futuro caso de uso de registro deberá guardar exclusivamente hashes bcrypt. No se crean usuarios ni contraseñas iniciales.
 
-## Project setup
+## Arquitectura mínima
 
-```bash
-$ pnpm install
+```text
+src/
+  modules/
+    auth/              # Role, User
+    plants/           # Plant y contrato de parámetros
+    catalogs/         # Fruit, Customer, Area
+    projections/      # Projection
+    plans/            # Plan, PlanDay, PlanDayArea y calculadora
+    workdays/          # Workday, ProgressRecord
+    alerts/           # Alert
+  database/            # Configuración, DataSource, registro de entidades y migraciones
+  shared/
+    infrastructure/persistence/  # ID y timestamps comunes
 ```
 
-## Compile and run the project
+Las convenciones del repositorio están en `AGENTS.md`: nombres de código y carpetas en inglés, y comentarios solo para contexto necesario o reglas de negocio importantes. Las entidades mapean explícitamente los nombres de columnas existentes; los valores persistidos de enums y las claves JSONB se conservan para mantener compatibilidad con las migraciones y snapshots previos.
+
+Cada módulo registra sus entidades en `infrastructure/persistence`. `domain` contiene enums, contratos y reglas puras sin dependencias de NestJS ni TypeORM. Los módulos Nest son el punto de composición. Al implementar flujos, agregar `application` para casos de uso/puertos y `presentation/http` para controladores/DTOs en el módulo correspondiente. Los adaptadores de repositorio vivirán en infraestructura; los casos de uso dependerán de sus puertos. No se duplican entidades ni se crean repositorios genéricos o carpetas vacías para este alcance.
+
+## Decisiones del modelo
+
+- Se sigue la regla detallada del documento: plan por **planta + fruta + año ISO + semana ISO**. La sección inicial dice planta/semana; confirmar si se requiere un único plan que englobe ambas frutas antes de construir esos flujos. `year` evita colisiones entre años y debe corresponder al año ISO, que puede diferir del calendario en enero/diciembre.
+- Se permite un solo BORRADOR por esa combinación y un solo APROBADO/EN_EJECUCION mediante índices únicos parciales. RECHAZADOS y CERRADOS pueden conservarse.
+- `parametersSnapshot` es un snapshot JSONB completo, tipado con `PlantParameters`. El futuro caso de uso de aplicar plan debe copiar todos los parámetros efectivos. Editar Planta no altera ese snapshot.
+- `numeric(14,4)` se representa como **string** en las entidades para conservar precisión. La calculadora convierte explícitamente a número. La tolerancia es porcentaje (5 = 5%); eficiencia y proporciones son fracciones (0.8 = 80%). Cajas siempre representan 8.2 kg; no hay tabla de unidades ni factor jaba/caja.
+- Fechas de días usan `date`/string; eventos usan `timestamptz`/Date; hora de planta usa `time`. El inicio se interpreta en America/Lima al abrir la jornada. `startedAt` y `closedAt` permiten calcular tiempo transcurrido y distinguir jornadas abiertas/cerradas; cruzar medianoche es válido.
+- Valores de cierre y asistencia por área admiten null hasta registrarse. `difference` puede ser negativa: no se asume que toda la fruta se procesa el mismo día.
+- Proyecciones son inmutables mediante trigger PostgreSQL. COSECHA exige fecha de la semana ISO y sin cliente; COMERCIAL exige cliente y sin fecha.
+- Todas las entidades tienen `createdAt`/`updatedAt`; las relaciones usan claves foráneas con RESTRICT, sin borrados en cascada ni soft-delete. Enums son VARCHAR con CHECK de valores mayúsculos (los escenarios mantienen +10/+20/-10).
+- Las restricciones cubren no negativos, rangos de planta, unicidad día/plan y día/área, una jornada por día, rechazo con comentario y ajuste de horas con motivo. Las transiciones, permisos, inmutabilidad de metas aprobadas, orden/monotonía de avances, consistencia de alertas entre jornada/día, semana de los días y suma del personal por área deberán implementarse en casos de uso transaccionales con bloqueo del agregado; las entidades por sí solas no ejecutan esos flujos.
+- Margen bajo se devuelve por separado del estado de horas para no ocultar riesgo de turno extra. Sin cosecha: cero trabajadores/horas y margen null. El reparto usa las proporciones fijas del documento y asigna el resto a Packing.
+
+## Inicio con Docker
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+cp .env.example .env
+# Cambiar DB_PASSWORD en .env según el entorno.
+docker compose up --build -d
 ```
 
-## Run tests
+La secuencia es PostgreSQL saludable → servicio de migraciones finalizado → API en http://localhost:3000. PostgreSQL persiste en un volumen; los puertos se exponen solo en localhost. `docker compose down` conserva datos; no usar `down -v` salvo que se quiera eliminar la base.
+
+Dockerfile multietapa: dependencias con lockfile congelado y caché BuildKit, compilación separada, runtime con dependencias de producción, usuario sin privilegios, sin código fuente ni `.env`. Compose usa `init: true`; Nest atiende señales para cierre ordenado. Las migraciones se ejecutan en un servicio separado, nunca mediante `synchronize` ni al arrancar cada réplica.
+
+Las migraciones iniciales crean roles, frutas, áreas y plantas Piura/Sullana. **Los rendimientos y topes de personal son ejemplos del documento: reemplazarlos por los valores oficiales antes de operar.**
+
+## Desarrollo local
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+cp .env.example .env
+pnpm install --frozen-lockfile
+docker compose up -d db
+pnpm migration:run
+pnpm start:dev
 ```
 
-## Deployment
+Nest y la CLI comparten `databaseOptions()`. DB_HOST, DB_USER, DB_PASSWORD y DB_NAME son obligatorios; DB_PORT tiene valor 5432. En servicios externos se puede usar DB_SSL=true (verificación de certificado habilitada; configurar certificados del entorno si corresponde). `synchronize` y `migrationsRun` permanecen desactivados.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Migraciones
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# Tras modificar entidades, con la BD de desarrollo previamente migrada:
+pnpm migration:generate src/database/migrations/NombreDelCambio
+# Para SQL o datos manuales:
+pnpm migration:create src/database/migrations/NombreDelCambio
+pnpm migration:show
+pnpm migration:run
+pnpm migration:revert    # Revierte únicamente la última migración
+# Tras pnpm build, con dependencias de producción:
+pnpm migration:run:prod
+pnpm migration:revert:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Revisar siempre el SQL generado. Las reglas con triggers y los datos iniciales necesitan migraciones manuales. No editar migraciones ya aplicadas. La reversión del seed falla deliberadamente si los catálogos tienen referencias; la reversión inicial elimina tablas y es destructiva.
 
-## Resources
+Referencias: [migraciones TypeORM](https://typeorm.io/docs/migrations/setup/) y [integración NestJS](https://docs.nestjs.com/techniques/database).
 
-Check out a few resources that may come in handy when working with NestJS:
+## Validación
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+pnpm build
+pnpm test --runInBand
+pnpm exec eslint 'src/**/*.ts' 'test/**/*.ts'
+```
 
-## Support
+Las pruebas e2e requieren PostgreSQL migrado. Usar una base aislada cuyo nombre termine en `_test` (las pruebas de esquema rechazan otro nombre), configurar las variables DB_* y ejecutar:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+pnpm migration:run
+pnpm test:e2e --runInBand
+```
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Las pruebas de esquema usan transacciones con rollback y comprueban restricciones, proyecciones inmutables, snapshot, unicidad de plans/jornadas y ausencia de diferencias entre migraciones y entidades. No usar una base de producción para probar migraciones.

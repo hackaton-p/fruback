@@ -1,0 +1,13 @@
+node_modules
+.pnpm-store
+.git
+dist
+coverage
+.env
+.env.*
+!.env.example
+*.log
+test
+**/*.spec.ts
+contexto-plan-packing.md
+README.md
