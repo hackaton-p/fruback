@@ -21,6 +21,7 @@ export class PlantResponse {
   @ApiProperty({}) id!: number;
   @ApiProperty({}) createdAt!: Date;
   @ApiProperty({}) updatedAt!: Date;
+  @ApiProperty({ nullable: true }) configurationCompletedAt!: Date | null;
   @ApiProperty({}) name!: string;
   @ApiProperty({}) cratesPerWorkerHour!: string;
   @ApiProperty({}) maxWorkers!: number;

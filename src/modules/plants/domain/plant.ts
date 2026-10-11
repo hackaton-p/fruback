@@ -8,4 +8,5 @@ export interface Plant extends DomainRecord {
   startTime: string;
   efficiencyFactor: string;
   volumeTolerancePercent: string;
+  configurationCompletedAt: Date | null;
 }
