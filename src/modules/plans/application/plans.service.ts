@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PackingStore } from '../../../shared/application/packing.store';
 import { ensure } from '../../../shared/domain/domain-error';
-import { decimal, ratio, weekDates } from '../../../shared/domain/dates';
+import {
+  decimal,
+  nextPlanningMonday,
+  ratio,
+  weekDates,
+} from '../../../shared/domain/dates';
 import { paginate } from '../../../shared/application/pagination';
 import type { Actor } from '../../auth/domain/actor';
 import { assertPlantAccess, scopedPlant } from '../../auth/domain/actor';
@@ -17,6 +22,9 @@ import {
 import type { ParameterInput } from '../../plants/domain/parameter-policy';
 import type { Plan } from '../domain/plan';
 export interface PlanInput {
+  startDate?: string;
+  dayCount?: number;
+  selectedDates?: string[];
   plantId: number;
   fruitId: number;
   year: number;
@@ -57,9 +65,7 @@ export class PlansService {
       year: input.year,
       week: input.week,
     });
-    const harvest = projections.filter(
-      (p) => p.type === ProjectionType.HARVEST,
-    );
+    let harvest = projections.filter((p) => p.type === ProjectionType.HARVEST);
     const commercial = projections.filter(
       (p) => p.type === ProjectionType.COMMERCIAL,
     );
@@ -68,6 +74,37 @@ export class PlansService {
       'Import both harvest and commercial projections before planning',
       409,
     );
+    if (
+      input.selectedDates !== undefined ||
+      input.startDate !== undefined ||
+      input.dayCount !== undefined
+    ) {
+      const dates = weekDates(input.year, input.week);
+      const start = input.startDate ?? dates[0];
+      const count = input.selectedDates?.length ?? input.dayCount ?? 5;
+      const offset = dates.indexOf(start);
+      ensure(
+        Number.isInteger(count) &&
+          count >= 1 &&
+          count <= 7 &&
+          offset >= 0 &&
+          (input.selectedDates !== undefined || offset + count <= 7),
+        'Invalid planning period',
+      );
+      const selected =
+        input.selectedDates ?? dates.slice(offset, offset + count);
+      ensure(
+        new Set(selected).size === count &&
+          selected.every((date) => dates.includes(date)),
+        'Invalid planning period',
+      );
+      harvest = harvest.filter((row) => selected.includes(row.date!));
+      ensure(
+        harvest.length === count,
+        'Harvest projections must cover every planning day',
+        409,
+      );
+    }
     const multiplier = {
       [HarvestScenario.PROJECTED]: 1,
       [HarvestScenario.PLUS_10]: 1.1,
@@ -152,29 +189,83 @@ export class PlansService {
     assertPlantAccess(actor, input.plantId);
     return this.calculate(this.store, input);
   }
-  async apply(input: PlanInput, actor: Actor) {
+  async apply(input: PlanInput, actor: Actor, planId?: number) {
     assertPlantAccess(actor, input.plantId);
+    if (planId === undefined) {
+      const dates = weekDates(input.year, input.week);
+      const monday = dates[0];
+      ensure(
+        monday >= nextPlanningMonday(new Date()),
+        'New plans must start next week or later',
+      );
+      const selected =
+        input.selectedDates ?? dates.slice(0, input.dayCount ?? 5);
+      const dayCount = selected.length;
+      ensure(
+        Number.isInteger(dayCount) &&
+          dayCount >= 2 &&
+          dayCount <= 6 &&
+          new Set(selected).size === dayCount &&
+          selected.includes(monday) &&
+          selected.every((date) => dates.slice(0, 6).includes(date)) &&
+          (input.dayCount === undefined || input.dayCount === dayCount) &&
+          (input.startDate ?? monday) === monday,
+        'Invalid planning period',
+      );
+      input = {
+        ...input,
+        startDate: monday,
+        dayCount,
+        selectedDates: [...selected].sort(),
+      };
+    }
     return this.store.transaction(async (store) => {
       ensure(
         await store.get('plants', input.plantId, true),
         'Plant not found',
         404,
       );
-      const existing = await store.find('plans', {
-        plantId: input.plantId,
-        fruitId: input.fruitId,
-        year: input.year,
-        week: input.week,
-      });
-      ensure(
-        !existing.some(
-          (p) => ![PlanStatus.DRAFT, PlanStatus.REJECTED].includes(p.status),
-        ),
-        'This week already has a submitted or approved plan',
-        409,
-      );
       const previous =
-        existing.find((p) => p.status === PlanStatus.DRAFT) ?? existing.at(-1);
+        planId === undefined ? null : await store.get('plans', planId, true);
+      if (planId !== undefined) {
+        ensure(previous, 'Plan not found', 404);
+        assertPlantAccess(actor, previous.plantId);
+        ensure(
+          [PlanStatus.DRAFT, PlanStatus.REJECTED].includes(previous.status),
+          'Only draft or rejected plans can be modified',
+          409,
+        );
+        ensure(
+          previous.plantId === input.plantId &&
+            previous.fruitId === input.fruitId &&
+            previous.year === input.year &&
+            previous.week === input.week,
+          'The planning week cannot be modified',
+          409,
+        );
+        const previousDays = await store.find(
+          'planDays',
+          { planId },
+          { orderBy: 'date' },
+        );
+        ensure(previousDays.length > 0, 'Plan has no days', 409);
+        const previousDates = previousDays.map((day) => day.date).sort();
+        ensure(
+          (input.startDate ?? previousDates[0]) === previousDates[0] &&
+            (input.dayCount ?? previousDays.length) === previousDays.length &&
+            (input.selectedDates === undefined ||
+              [...input.selectedDates].sort().join(',') ===
+                previousDates.join(',')),
+          'The planning period cannot be modified',
+          409,
+        );
+        input = {
+          ...input,
+          startDate: previousDates[0],
+          dayCount: previousDays.length,
+          selectedDates: previousDates,
+        };
+      }
       const calculated = await this.calculate(store, input);
       if (previous)
         for (const day of await store.find('planDays', {
@@ -380,6 +471,27 @@ export class PlansService {
         );
         if (target === PlanStatus.REJECTED)
           ensure(comment?.trim(), 'A rejection comment is required');
+        if (target === PlanStatus.APPROVED) {
+          const approved = await store.find('plans', {
+            plantId: locked.plantId,
+            fruitId: locked.fruitId,
+            year: locked.year,
+            week: locked.week,
+          });
+          ensure(
+            !approved.some(
+              (p) =>
+                p.id !== id &&
+                [
+                  PlanStatus.APPROVED,
+                  PlanStatus.IN_PROGRESS,
+                  PlanStatus.CLOSED,
+                ].includes(p.status),
+            ),
+            'Only one plan can be approved for this plant, fruit and week',
+            409,
+          );
+        }
         await store.save('plans', {
           id,
           status: target,
@@ -389,6 +501,28 @@ export class PlansService {
         });
       }
       return this.detail(store, id, actor);
+    });
+  }
+  async discard(id: number, actor: Actor) {
+    return this.store.transaction(async (store) => {
+      const plan = await store.get('plans', id);
+      ensure(plan, 'Plan not found', 404);
+      assertPlantAccess(actor, plan.plantId);
+      await store.get('plants', plan.plantId, true);
+      const locked = await store.get('plans', id, true);
+      ensure(locked, 'Plan not found', 404);
+      ensure(
+        (locked.status === PlanStatus.DRAFT && !locked.submittedAt) ||
+          locked.status === PlanStatus.REJECTED,
+        'Only unsubmitted or rejected plans can be discarded',
+        409,
+      );
+      for (const day of await store.find('planDays', { planId: id })) {
+        await store.remove('alerts', { planDayId: day.id });
+        await store.remove('planDayAreas', { planDayId: day.id });
+        await store.remove('planDays', { id: day.id });
+      }
+      await store.remove('plans', { id });
     });
   }
 }

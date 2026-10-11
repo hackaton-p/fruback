@@ -222,6 +222,29 @@ export class ProjectionQuery extends WeekQuery {
 }
 
 export class CreatePlanDto {
+  @ApiProperty({ required: false, example: '2026-10-12' })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsISO8601({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  startDate?: string;
+  @ApiProperty({ required: false, default: 5 })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsInt()
+  @Min(1)
+  @Max(7)
+  dayCount?: number;
+  @ApiProperty({
+    required: false,
+    type: [String],
+    example: ['2026-10-12', '2026-10-14', '2026-10-17'],
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(7)
+  @IsISO8601({ strict: true }, { each: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { each: true })
+  selectedDates?: string[];
   @ApiProperty({})
   @Type(() => Number)
   @IsInt()
