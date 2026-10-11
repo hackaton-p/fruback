@@ -49,6 +49,12 @@ export class CatalogsController {
   fruits(@Query() query: CatalogListQuery, @CurrentActor() actor: Actor) {
     return this.service.fruits(query.plantId, query.includeInactive, actor);
   }
+  @Get('fruits/:id')
+  @ApiOperation({ summary: 'Get a fruit, including inactive fruits for historical plans' })
+  @ApiOkResponse({ type: FruitResponse })
+  fruit(@Param('id', ParseIntPipe) id: number) {
+    return this.service.fruit(id);
+  }
   @Post('fruits')
   @Roles(RoleName.ADMIN, RoleName.SHIFT_MANAGER, RoleName.DEPUTY_MANAGER)
   @ApiOperation({ summary: 'Create a fruit and assign it to plants' })
