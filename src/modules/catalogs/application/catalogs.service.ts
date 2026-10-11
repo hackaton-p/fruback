@@ -8,6 +8,13 @@ import { assertPlantAccess } from '../../auth/domain/actor';
 @Injectable()
 export class CatalogsService {
   constructor(private readonly store: PackingStore) {}
+  async fruit(id: number) {
+    // Historical plans must remain readable after a fruit is deactivated.
+    const fruit = await this.store.get('fruits', id);
+    ensure(fruit, 'Fruit not found', 404);
+    const assignments = await this.store.find('plantFruits', { fruitId: id });
+    return { ...fruit, plantIds: assignments.map(({ plantId }) => plantId) };
+  }
   async fruits(plantId?: number, includeInactive = false, actor?: Actor) {
     ensure(
       !includeInactive || [RoleName.ADMIN, RoleName.SHIFT_MANAGER, RoleName.DEPUTY_MANAGER].includes(actor?.role as RoleName),
