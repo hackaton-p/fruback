@@ -42,4 +42,6 @@ export class PlantEntity extends BaseEntity {
     nullable: true,
   })
   configurationCompletedAt!: Date | null;
+  @Column({ name: 'activo', type: 'boolean', default: true })
+  isActive!: boolean;
 }

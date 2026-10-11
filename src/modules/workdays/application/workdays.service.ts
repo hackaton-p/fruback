@@ -5,7 +5,7 @@ import type { PlanDayArea } from '../../plans/domain/plan-day-area';
 export interface DashboardDay {
   planId: number;
   plantId: number;
-  fruitId: number;
+  fruitId: number | null;
   date: string;
   targetCrates: string;
   plannedWorkers: number;
@@ -204,6 +204,7 @@ export class WorkdaysService {
                     Number(plan.parametersSnapshot.efficiencyFactor)),
               ),
         receivedCrates: '0',
+        processedByFruit: day.fruitTargets.map((target) => ({ fruitId: target.fruitId, fruitName: target.fruitName, crates: '0' })),
         processedCrates: '0',
         workedHours: null,
         discardedCrates: null,
@@ -240,6 +241,7 @@ export class WorkdaysService {
       recordedAt: string;
       cumulativeReceivedCrates?: number;
       cumulativeProcessedCrates?: number;
+      processedByFruit?: { fruitId: number; crates: number }[];
       areaId?: number;
       staffChange?: number;
       expectedDailyCrates?: number;
@@ -264,6 +266,7 @@ export class WorkdaysService {
         [ProgressType.PROGRESS]: [
           'cumulativeReceivedCrates',
           'cumulativeProcessedCrates',
+          'processedByFruit',
         ],
         [ProgressType.STAFF]: ['areaId', 'staffChange'],
         [ProgressType.VOLUME]: ['expectedDailyCrates'],
@@ -278,6 +281,7 @@ export class WorkdaysService {
       let processed = Number(workday.processedCrates);
       let expected = Number(workday.expectedDailyCrates);
       let presentWorkers = workday.presentWorkers;
+      let fruitBreakdown: { fruitId: number; crates: string }[] = [];
       const areas = await store.find('planDayAreas', { planDayId: day.id });
       if (input.type === ProgressType.PROGRESS) {
         ensure(
@@ -291,6 +295,25 @@ export class WorkdaysService {
         );
         received = input.cumulativeReceivedCrates!;
         processed = input.cumulativeProcessedCrates!;
+        const plannedFruitIds = day.fruitTargets.map((target) => target.fruitId);
+        const submitted = input.processedByFruit ?? (plannedFruitIds.length === 0
+          ? []
+          : plannedFruitIds.length === 1
+            ? [{ fruitId: plannedFruitIds[0], crates: processed }]
+            : undefined);
+        ensure(submitted, 'Processed quantities are required for each fruit', 400);
+        ensure(
+          new Set(submitted.map((item) => item.fruitId)).size === plannedFruitIds.length &&
+            plannedFruitIds.every((fruitId) => submitted.some((item) => item.fruitId === fruitId)),
+          'Processed quantities must include each planned fruit exactly once',
+        );
+        ensure(
+          Math.abs(submitted.reduce((sum, item) => sum + item.crates, 0) - processed) < 0.0001,
+          'Fruit quantities must add up to total processed crates',
+        );
+        const previousByFruit = new Map((workday.processedByFruit ?? []).map((item) => [item.fruitId, Number(item.crates)]));
+        ensure(submitted.every((item) => item.crates >= (previousByFruit.get(item.fruitId) ?? 0)), 'Fruit quantities cannot decrease');
+        fruitBreakdown = submitted.map((item) => ({ fruitId: item.fruitId, fruitName: day.fruitTargets.find((target) => target.fruitId === item.fruitId)?.fruitName, crates: decimal(item.crates) }));
         expected = Math.max(expected, received);
       } else if (input.type === ProgressType.STAFF) {
         const area = areas.find((a) => a.areaId === input.areaId);
@@ -320,6 +343,7 @@ export class WorkdaysService {
           input.type === ProgressType.PROGRESS ? decimal(received) : null,
         cumulativeProcessedCrates:
           input.type === ProgressType.PROGRESS ? decimal(processed) : null,
+        processedByFruit: input.type === ProgressType.PROGRESS ? fruitBreakdown! : null,
         areaId: input.type === ProgressType.STAFF ? input.areaId! : null,
         staffChange:
           input.type === ProgressType.STAFF ? input.staffChange! : null,
@@ -357,6 +381,7 @@ export class WorkdaysService {
         presentWorkers,
         receivedCrates: decimal(received),
         processedCrates: decimal(processed),
+        ...(input.type === ProgressType.PROGRESS ? { processedByFruit: fruitBreakdown! } : {}),
         expectedDailyCrates: decimal(expected),
       });
       const alerts: Alert[] = [];
@@ -420,6 +445,7 @@ export class WorkdaysService {
       workedHours: number;
       receivedCrates?: number;
       processedCrates: number;
+      processedByFruit?: { fruitId: number; crates: number }[];
       discardedCrates: number;
       looseKg: number;
       fixedKg: number;
@@ -445,12 +471,31 @@ export class WorkdaysService {
         input.processedCrates === 0 || input.workedHours > 0,
         'Worked hours are required when fruit was processed',
       );
+      const plannedFruitIds = day.fruitTargets.map((target) => target.fruitId);
+      const submitted = input.processedByFruit ?? (plannedFruitIds.length === 0
+        ? []
+        : plannedFruitIds.length === 1
+          ? [{ fruitId: plannedFruitIds[0], crates: input.processedCrates }]
+          : undefined);
+      ensure(submitted, 'Closing quantities are required for each fruit', 400);
+      ensure(
+        new Set(submitted.map((item) => item.fruitId)).size === plannedFruitIds.length &&
+          plannedFruitIds.every((fruitId) => submitted.some((item) => item.fruitId === fruitId)),
+        'Closing quantities must include each planned fruit exactly once',
+      );
+      ensure(
+        Math.abs(submitted.reduce((sum, item) => sum + item.crates, 0) - input.processedCrates) < 0.0001,
+        'Fruit quantities must add up to total processed crates',
+      );
+      const previousByFruit = new Map((workday.processedByFruit ?? []).map((item) => [item.fruitId, Number(item.crates)]));
+      ensure(submitted.every((item) => item.crates >= (previousByFruit.get(item.fruitId) ?? 0)), 'Fruit quantities cannot decrease');
       await store.save('workdays', {
         id,
         closedAt: new Date(),
         workedHours: decimal(input.workedHours),
         receivedCrates: decimal(receivedCrates),
         processedCrates: decimal(input.processedCrates),
+        processedByFruit: submitted.map((item) => ({ fruitId: item.fruitId, fruitName: day.fruitTargets.find((target) => target.fruitId === item.fruitId)?.fruitName, crates: decimal(item.crates) })),
         discardedCrates: decimal(input.discardedCrates),
         looseKg: decimal(input.looseKg),
         fixedKg: decimal(input.fixedKg),
@@ -561,7 +606,6 @@ export class WorkdaysService {
     const plans = (
       await this.store.find('plans', {
         plantId,
-        fruitId: query.fruitId,
         year: query.year,
         week: query.week,
       })
@@ -700,7 +744,6 @@ export class WorkdaysService {
     const pendingPlans = (
       await this.store.find('plans', {
         plantId,
-        fruitId: query.fruitId,
         status: PlanStatus.PENDING,
       })
     ).length;

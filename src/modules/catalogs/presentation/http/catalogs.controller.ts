@@ -18,6 +18,8 @@ import {
   ApiNoContentResponse,
 } from '@nestjs/swagger';
 import { Roles } from '../../../auth/presentation/http/auth.decorators';
+import { CurrentActor } from '../../../auth/presentation/http/auth.decorators';
+import type { Actor } from '../../../auth/domain/actor';
 import { RoleName } from '../../../auth/domain/enums';
 import {
   ApiProtected,
@@ -28,6 +30,8 @@ import {
   PaginationQuery,
   CustomerDto,
   UpdateCustomerDto,
+  CatalogListQuery,
+  FruitCatalogDto,
 } from '../../../../shared/presentation/http/request.dto';
 import {
   FruitResponse,
@@ -42,8 +46,29 @@ export class CatalogsController {
   @Get('fruits')
   @ApiOperation({ summary: 'List fruits' })
   @ApiOkResponse({ type: [FruitResponse] })
-  fruits() {
-    return this.service.fruits();
+  fruits(@Query() query: CatalogListQuery, @CurrentActor() actor: Actor) {
+    return this.service.fruits(query.plantId, query.includeInactive, actor);
+  }
+  @Post('fruits')
+  @Roles(RoleName.ADMIN, RoleName.SHIFT_MANAGER, RoleName.DEPUTY_MANAGER)
+  @ApiOperation({ summary: 'Create a fruit and assign it to plants' })
+  @ApiCreatedResponse({ type: FruitResponse })
+  createFruit(@Body() body: FruitCatalogDto, @CurrentActor() actor: Actor) {
+    return this.service.saveFruit(body, actor);
+  }
+  @Patch('fruits/:id')
+  @Roles(RoleName.ADMIN, RoleName.SHIFT_MANAGER, RoleName.DEPUTY_MANAGER)
+  @ApiOperation({ summary: 'Edit a fruit and its plant assignments' })
+  @ApiOkResponse({ type: FruitResponse })
+  updateFruit(@Param('id', ParseIntPipe) id: number, @Body() body: FruitCatalogDto, @CurrentActor() actor: Actor) {
+    return this.service.saveFruit(body, actor, id);
+  }
+  @Delete('fruits/:id')
+  @Roles(RoleName.ADMIN, RoleName.SHIFT_MANAGER, RoleName.DEPUTY_MANAGER)
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  deactivateFruit(@Param('id', ParseIntPipe) id: number) {
+    return this.service.deactivateFruit(id);
   }
   @Get('areas')
   @ApiOperation({ summary: 'List staffing areas' })

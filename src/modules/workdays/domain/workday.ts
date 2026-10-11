@@ -1,5 +1,6 @@
 import type { DomainRecord } from '../../../shared/domain/domain-record';
 export interface Workday extends DomainRecord {
+  processedByFruit?: { fruitId: number; fruitName?: string; crates: string }[];
   planDayId: number;
   startedAt: Date;
   closedAt: Date | null;

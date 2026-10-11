@@ -93,6 +93,19 @@ Las reglas y modelos del dominio son independientes de TypeORM. Los casos de uso
 
 Los identificadores del código están en inglés según `AGENTS.md`. Tablas, columnas y valores persistidos de enums mantienen el contrato anterior; los snapshots JSONB tienen un transformador explícito. Las cantidades decimales se devuelven como strings y se reciben como números. El plan se identifica por planta, fruta, año ISO y semana ISO.
 
+## Prioridades para acercar el MVP al reto
+
+El MVP actual planifica por planta, fruta y día, con un turno y rendimientos agregados. El reto también pide optimizar por línea, considerar formatos y paradas, y mostrar utilización de línea. Agregar estas capacidades en este orden; cada fase depende de validar los datos de la anterior.
+
+1. **Acordar alcance y reglas con Operaciones.** Confirmar si el plan debe ser por planta o por fruta, si habrá varios turnos, qué significa “buena planificación”, cómo se mide la calidad y qué restricciones de operación son obligatorias. Resolver también qué pasa con fruta que cruza de un día al siguiente. El alcance actual excluye líneas y arrastre de fruta.
+2. **Conseguir y validar datos reales.** Solicitar entre uno y tres meses de datos anonimizados: programa comercial, fruta recibida y producida, variedades y formatos, líneas, capacidades y velocidades, horas, paradas y cambios de formato, dotación y producción ejecutada. Confirmar los rendimientos y topes de personal de Piura y Sullana; los valores cargados hoy son referenciales.
+3. **Modelar líneas, turnos y formatos.** Agregar catálogos y relaciones para líneas, turnos, variedades y formatos, con capacidad/velocidad por combinación y tiempos de cambio y parada. Definir cómo se asignan personas por línea y turno. Revisar el modelo antes de crear migraciones para evitar fijar supuestos con datos incompletos.
+4. **Calcular el plan operativo.** Extender la simulación del backend para distribuir volúmenes por línea y turno, respetando capacidades, tiempos disponibles, cambios de formato, paradas y personal. Mantener escenarios de volumen y el cumplimiento comercial; incluir las restricciones de calidad acordadas.
+5. **Registrar ejecución por línea y validar el resultado.** Capturar producción, horas, dotación, paradas, cambios de formato y calidad por línea/turno. Comparar las recomendaciones con los datos históricos y revisar las diferencias con planificadores y jefes de turno.
+6. **Completar indicadores y pantallas.** Incorporar utilización de línea, horas de operación, cumplimiento comercial y calidad; mostrar supuestos, alertas y escenarios en las vistas de planificación, ejecución y dashboard. Validar la interfaz con personal de planta.
+
+La brecha comercial por cliente, el historial de auditoría y el arrastre excepcional siguen fuera del MVP mientras Operaciones no los priorice. Esta hoja de ruta describe trabajo pendiente; no implica que esas funciones ya estén disponibles.
+
 ## Migraciones
 
 ```bash

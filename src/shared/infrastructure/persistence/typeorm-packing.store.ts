@@ -11,6 +11,7 @@ import { ProgressRecordEntity } from '../../../modules/workdays/infrastructure/p
 import { AreaEntity } from '../../../modules/catalogs/infrastructure/persistence/area.entity';
 import { CustomerEntity } from '../../../modules/catalogs/infrastructure/persistence/customer.entity';
 import { FruitEntity } from '../../../modules/catalogs/infrastructure/persistence/fruit.entity';
+import { PlantFruitEntity } from '../../../modules/catalogs/infrastructure/persistence/plant-fruit.entity';
 import { AlertEntity } from '../../../modules/alerts/infrastructure/persistence/alert.entity';
 import { ProjectionEntity } from '../../../modules/projections/infrastructure/persistence/projection.entity';
 import { RoleEntity } from '../../../modules/auth/infrastructure/persistence/role.entity';
@@ -25,6 +26,7 @@ const tables: Record<Table, EntityTarget<ObjectLiteral>> = {
   areas: AreaEntity,
   customers: CustomerEntity,
   fruits: FruitEntity,
+  plantFruits: PlantFruitEntity,
   alerts: AlertEntity,
   projections: ProjectionEntity,
   roles: RoleEntity,

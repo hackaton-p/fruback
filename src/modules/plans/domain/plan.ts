@@ -4,7 +4,8 @@ import type { HarvestScenario } from './enums';
 import type { PlantParameters } from '../../plants/domain/plant-parameters';
 export interface Plan extends DomainRecord {
   plantId: number;
-  fruitId: number;
+  /** Null for consolidated plant-week plans; retained for legacy plans. */
+  fruitId: number | null;
   year: number;
   week: number;
   harvestScenario: HarvestScenario;

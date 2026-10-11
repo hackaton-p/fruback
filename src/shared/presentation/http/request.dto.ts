@@ -19,8 +19,11 @@ import {
   ArrayMinSize,
   ArrayMaxSize,
   IsArray,
+  IsOptional,
   IsISO8601,
+  IsBoolean,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { RoleName } from '../../../modules/auth/domain/enums';
 import { ProjectionType } from '../../../modules/projections/domain/enums';
 import {
@@ -53,6 +56,14 @@ export class PlantFilterQuery extends PaginationQuery {
   @Min(1)
   @Max(2147483647)
   plantId?: number;
+}
+
+export class CatalogListQuery extends PlantFilterQuery {
+  @ApiProperty({ required: false, default: false })
+  @ValidateIf((_object, value) => value !== undefined)
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  includeInactive?: boolean;
 }
 
 export class WeekQuery {
@@ -124,6 +135,42 @@ export class PlantParametersDto {
   @Min(0)
   @Max(100)
   volumeTolerancePercent!: number;
+}
+
+export class PlantCatalogDto {
+  @ApiProperty({})
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  name!: string;
+
+  @ApiProperty({ required: false })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class FruitCatalogDto {
+  @ApiProperty({})
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  name!: string;
+
+  @ApiProperty({ type: [Number], minItems: 1, uniqueItems: true })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(2147483647, { each: true })
+  plantIds!: number[];
+
+  @ApiProperty({ required: false })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class ParameterOverridesDto extends PartialType(PlantParametersDto, {
@@ -254,12 +301,6 @@ export class CreatePlanDto {
   @ApiProperty({})
   @Type(() => Number)
   @IsInt()
-  @Min(1)
-  @Max(2147483647)
-  fruitId!: number;
-  @ApiProperty({})
-  @Type(() => Number)
-  @IsInt()
   @Min(2000)
   @Max(2100)
   year!: number;
@@ -369,6 +410,21 @@ export class OpenWorkdayDto {
   attendance!: AttendanceDto[];
 }
 
+export class FruitCratesDto {
+  @ApiProperty()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(2147483647)
+  fruitId!: number;
+  @ApiProperty()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 4 })
+  @Min(0)
+  @Max(1000000000)
+  crates!: number;
+}
+
 export class ProgressDto {
   @ApiProperty({ enum: ProgressType })
   @IsEnum(ProgressType)
@@ -391,6 +447,14 @@ export class ProgressDto {
   @Min(0)
   @Max(1000000000)
   cumulativeProcessedCrates?: number;
+  @ApiProperty({ required: false, type: [FruitCratesDto], description: 'Processed cumulative quantity by fruit' })
+  @ValidateIf((o: ProgressDto) => o.type === ProgressType.PROGRESS)
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => FruitCratesDto)
+  processedByFruit?: FruitCratesDto[];
   @ApiProperty({ required: false, description: 'Required for PERSONAL' })
   @ValidateIf((o: ProgressDto) => o.type === ProgressType.STAFF)
   @Type(() => Number)
@@ -442,6 +506,7 @@ export class CloseWorkdayDto {
   workedHours!: number;
   @ApiProperty({ required: false })
   @ValidateIf((_object, value) => value !== undefined)
+  @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 4 })
   @Min(0)
@@ -453,6 +518,13 @@ export class CloseWorkdayDto {
   @Min(0)
   @Max(1000000000.0)
   processedCrates!: number;
+  @ApiProperty({ required: false, type: [FruitCratesDto] })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => FruitCratesDto)
+  processedByFruit?: FruitCratesDto[];
   @ApiProperty({})
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 4 })

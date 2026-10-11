@@ -72,7 +72,7 @@ export class PlansController {
   @Roles(RoleName.PLANNER)
   @ApiOperation({
     summary:
-      'Apply the official draft with daily staffing and parameter snapshot',
+      'Apply one plant-week draft from the commercial order with daily targets by fruit',
   })
   @ApiCreatedResponse({ type: PlanDetailsResponse })
   apply(@Body() body: CreatePlanDto, @CurrentActor() actor: Actor) {

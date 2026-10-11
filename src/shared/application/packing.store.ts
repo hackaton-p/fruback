@@ -3,6 +3,7 @@ import type { ProgressRecord } from '../../modules/workdays/domain/progress-reco
 import type { Area } from '../../modules/catalogs/domain/area';
 import type { Customer } from '../../modules/catalogs/domain/customer';
 import type { Fruit } from '../../modules/catalogs/domain/fruit';
+import type { PlantFruit } from '../../modules/catalogs/domain/plant-fruit';
 import type { Alert } from '../../modules/alerts/domain/alert';
 import type { Projection } from '../../modules/projections/domain/projection';
 import type { Role } from '../../modules/auth/domain/role';
@@ -17,6 +18,7 @@ export interface Models {
   areas: Area;
   customers: Customer;
   fruits: Fruit;
+  plantFruits: PlantFruit;
   alerts: Alert;
   projections: Projection;
   roles: Role;
