@@ -34,6 +34,18 @@ La contraseña debe tener entre 12 y 72 caracteres y no superar 72 bytes UTF-8. 
 
 Los parámetros iniciales de Piura/Sullana son ejemplos del documento; reemplazarlos por los valores oficiales desde `PATCH /api/plants/:id`.
 
+### Usuarios de prueba
+
+Para pruebas iniciales, crea un planificador, un subgerente y un jefe de turno (uno por rol) ya vinculados a la primera planta existente:
+
+```bash
+docker compose exec api node dist/commands/seed-test-users.js
+# o en local, con el proyecto compilado (pnpm build):
+pnpm seed:test-users
+```
+
+Correos: `planner-test@purafruit.test`, `deputy-manager-test@purafruit.test`, `shift-manager-test@purafruit.test`. Contraseña para los tres: `Packing-test-password-2026`. El comando es idempotente: si un correo ya existe, lo omite. Requiere que exista al menos una planta (las del seed de migración, Piura/Sullana, sirven). No usar en producción.
+
 ## Desarrollo local
 
 ```bash

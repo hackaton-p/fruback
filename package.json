@@ -27,6 +27,7 @@
     "migration:run:prod": "node node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
     "migration:revert:prod": "node node_modules/typeorm/cli.js migration:revert -d dist/database/data-source.js",
     "auth:bootstrap": "node dist/commands/bootstrap-user.js",
+    "seed:test-users": "node dist/commands/seed-test-users.js",
     "docs:export": "node dist/commands/export-openapi.js",
     "test:mvp": "pnpm build && node --test test/mvp.integration.cjs"
   },
