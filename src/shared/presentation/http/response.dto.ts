@@ -165,6 +165,7 @@ export class ActorResponse {
   @ApiProperty({}) email!: string;
   @ApiProperty({ enum: RoleName }) role!: RoleName;
   @ApiProperty({ nullable: true }) plantId!: number | null;
+  @ApiProperty({ type: [Number] }) plantIds!: number[];
 }
 export class PlanTotalsResponse {
   @ApiProperty({}) targetCrates!: string;

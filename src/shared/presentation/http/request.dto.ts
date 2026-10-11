@@ -172,6 +172,16 @@ export class CreateUserDto {
   @Min(1)
   @Max(2147483647)
   plantId?: number;
+  @ApiProperty({ required: false, type: [Number], uniqueItems: true })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(2147483647, { each: true })
+  plantIds?: number[];
 }
 
 export class ProjectionImportDto {

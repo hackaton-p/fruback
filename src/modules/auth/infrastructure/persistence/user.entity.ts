@@ -1,4 +1,4 @@
-import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, Index, JoinColumn, ManyToMany, ManyToOne, JoinTable } from 'typeorm';
 import type { Relation } from 'typeorm';
 import { BaseEntity } from '../../../../shared/infrastructure/persistence/base.entity';
 
@@ -16,6 +16,13 @@ export class UserEntity extends BaseEntity {
   @ManyToOne(() => PlantEntity, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'plantaId' })
   plant!: Relation<PlantEntity> | null;
+  @ManyToMany(() => PlantEntity)
+  @JoinTable({
+    name: 'usuario_planta',
+    joinColumn: { name: 'usuarioId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'plantaId', referencedColumnName: 'id' },
+  })
+  plants!: Relation<PlantEntity[]>;
   @Column({ name: 'nombre', type: 'varchar', length: 255 }) name!: string;
   @Column({ type: 'varchar', length: 255, unique: true }) email!: string;
   @Column({ type: 'varchar', length: 255, select: false, nullable: true })

@@ -37,11 +37,11 @@ Creación de usuario:
   "email": "planner@example.com",
   "password": "Use-a-unique-password",
   "role": "PLANIFICADOR",
-  "plantId": 1
+  "plantIds": [1, 2]
 }
 ```
 
-Roles persistidos: `PLANIFICADOR`, `SUBGERENTE`, `JEFE_TURNO`. Solo un subgerente global puede crear otro perfil sin planta. Planificadores y jefes de turno requieren `plantId`. Las contraseñas se almacenan en Better Auth con bcrypt; nunca se devuelven hashes.
+Roles persistidos: `PLANIFICADOR`, `SUBGERENTE`, `JEFE_TURNO`. `plantIds` asigna una o varias plantas al perfil. `plantId` sigue aceptándose como alias para asignar una sola planta. Solo un subgerente global puede crear un perfil global sin asignaciones. Las asignaciones existentes se copian a la relación `usuario_planta` durante la migración. `/api/users/me` devuelve `plantIds`, y cada operación por planta valida esa relación. Las contraseñas se almacenan en Better Auth con bcrypt; nunca se devuelven hashes.
 
 ## Plantas y catálogos
 
@@ -58,7 +58,7 @@ Roles persistidos: `PLANIFICADOR`, `SUBGERENTE`, `JEFE_TURNO`. Solo un subgerent
 | PATCH | `/api/customers/{id}` | Planificador o subgerente |
 | DELETE | `/api/customers/{id}` | Planificador o subgerente; solo si no tiene referencias |
 
-Los clientes, frutas y áreas son catálogos compartidos. Frutas y áreas son de solo lectura. El resto de los datos se filtra por planta. Un `SUBGERENTE` con `plantId: null` tiene acceso global; un subgerente asignado a una planta queda limitado a ella.
+Los clientes, frutas y áreas son catálogos compartidos. Frutas y áreas son de solo lectura. El resto de los datos se filtra por planta y se valida contra las asignaciones del usuario. Un `SUBGERENTE` con `plantId: null` mantiene acceso global; los demás usuarios pueden tener una o varias plantas asignadas.
 
 Los parámetros de planta son `cratesPerWorkerHour`, `maxWorkers`, `shiftHours`, `maxOvertimeHours`, `startTime`, `efficiencyFactor` y `volumeTolerancePercent`. La eficiencia usa fracción (`0.8`); la tolerancia usa porcentaje (`5`). Cambiar parámetros no cambia planes existentes.
 
