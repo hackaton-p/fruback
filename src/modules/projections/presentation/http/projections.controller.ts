@@ -54,7 +54,7 @@ export class ProjectionsController {
   @ApiOperation({
     summary: 'Import one XLSX projection per plant, fruit, ISO week and type',
     description:
-      'One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. Quantities are BOXES (8.2 kg) or TONNES. Entire import is atomic; repeated imports return 409.',
+      'One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. All quantities are crates (jabas), without conversions. Entire import is atomic; repeated imports return 409.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -68,7 +68,6 @@ export class ProjectionsController {
         year: { type: 'integer', example: 2026 },
         week: { type: 'integer', minimum: 1, maximum: 53 },
         type: { type: 'string', enum: ['COSECHA', 'COMERCIAL'] },
-        unit: { type: 'string', enum: ['BOXES', 'TONNES'], default: 'BOXES' },
       },
     },
   })

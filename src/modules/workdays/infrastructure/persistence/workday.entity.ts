@@ -6,17 +6,38 @@ import { PlanDayEntity } from '../../../plans/infrastructure/persistence/plan-da
 @Entity('jornada')
 @Check(
   'ck_jornada_0',
-  `"trabajadoresPresentes" >= 0 AND "cajasRecibidas" >= 0 AND "cajasProcesadas" >= 0`,
+  `"trabajadoresPresentes" >= 0 AND "jabasRecibidas" >= 0 AND "jabasProcesadas" >= 0`,
+)
+@Check(
+  'ck_workday_estimate',
+  `"jabasEsperadasDia" >= 0 AND ("horasEstimadasInicio" IS NULL OR "horasEstimadasInicio" >= 0)`,
 )
 @Check('ck_jornada_1', `"horasTrabajadas" IS NULL OR "horasTrabajadas" >= 0`)
-@Check('ck_jornada_2', `"cajasDescarte" IS NULL OR "cajasDescarte" >= 0`)
+@Check('ck_jornada_2', `"jabasDescarte" IS NULL OR "jabasDescarte" >= 0`)
 @Check('ck_jornada_3', `"kgLoose" IS NULL OR "kgLoose" >= 0`)
 @Check('ck_jornada_4', `"kgFijo" IS NULL OR "kgFijo" >= 0`)
 @Check(
   'ck_jornada_5',
-  `"fechaCierre" IS NULL OR ("fechaCierre" >= "fechaInicio" AND "horasTrabajadas" IS NOT NULL AND "cajasDescarte" IS NOT NULL AND "kgLoose" IS NOT NULL AND "kgFijo" IS NOT NULL AND "metaCumplida" IS NOT NULL AND "diferencia" IS NOT NULL)`,
+  `"fechaCierre" IS NULL OR ("fechaCierre" >= "fechaInicio" AND "horasTrabajadas" IS NOT NULL AND "jabasDescarte" IS NOT NULL AND "kgLoose" IS NOT NULL AND "kgFijo" IS NOT NULL AND "metaCumplida" IS NOT NULL AND "diferencia" IS NOT NULL)`,
 )
 export class WorkdayEntity extends BaseEntity {
+  @Column({
+    name: 'horasEstimadasInicio',
+    type: 'numeric',
+    precision: 14,
+    scale: 4,
+    nullable: true,
+  })
+  initialEstimatedHours!: string | null;
+  @Column({
+    name: 'jabasEsperadasDia',
+    type: 'numeric',
+    precision: 14,
+    scale: 4,
+    default: 0,
+  })
+  expectedDailyCrates!: string;
+
   @Column({ name: 'planDiaId', type: 'integer' }) planDayId!: number;
   @OneToOne(() => PlanDayEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'planDiaId' })
@@ -27,13 +48,13 @@ export class WorkdayEntity extends BaseEntity {
   @Column({ name: 'trabajadoresPresentes', type: 'integer' })
   presentWorkers!: number;
   @Column({
-    name: 'cajasRecibidas',
+    name: 'jabasRecibidas',
     type: 'numeric',
     precision: 14,
     scale: 4,
     default: 0,
   })
-  receivedBoxes!: string;
+  receivedCrates!: string;
   @Column({
     name: 'horasTrabajadas',
     type: 'numeric',
@@ -43,21 +64,21 @@ export class WorkdayEntity extends BaseEntity {
   })
   workedHours!: string | null;
   @Column({
-    name: 'cajasProcesadas',
+    name: 'jabasProcesadas',
     type: 'numeric',
     precision: 14,
     scale: 4,
     default: 0,
   })
-  processedBoxes!: string;
+  processedCrates!: string;
   @Column({
-    name: 'cajasDescarte',
+    name: 'jabasDescarte',
     type: 'numeric',
     precision: 14,
     scale: 4,
     nullable: true,
   })
-  discardedBoxes!: string | null;
+  discardedCrates!: string | null;
   @Column({
     name: 'kgLoose',
     type: 'numeric',

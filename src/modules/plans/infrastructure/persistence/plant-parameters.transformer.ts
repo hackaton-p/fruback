@@ -1,7 +1,7 @@
 import type { PlantParameters } from '../../../plants/domain/plant-parameters';
 
 const snapshotKeys = {
-  boxesPerWorkerHour: 'rendimientoPersonaHora',
+  cratesPerWorkerHour: 'rendimientoPersonaHora',
   maxWorkers: 'personalMaximo',
   shiftHours: 'horasJornada',
   maxOvertimeHours: 'horasExtraMax',

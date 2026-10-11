@@ -12,6 +12,7 @@ import { PlanCalculatorService } from '../domain/services/plan-calculator.servic
 import {
   plantParameters,
   resolveParameters,
+  parameterChanges,
 } from '../../plants/domain/parameter-policy';
 import type { ParameterInput } from '../../plants/domain/parameter-policy';
 import type { Plan } from '../domain/plan';
@@ -21,7 +22,7 @@ export interface PlanInput {
   year: number;
   week: number;
   harvestScenario: HarvestScenario;
-  overrides?: ParameterInput;
+  parameters: Required<ParameterInput>;
 }
 export interface PlanFilter {
   plantId?: number;
@@ -43,7 +44,7 @@ export class PlansService {
     ensure(await store.get('fruits', input.fruitId), 'Fruit not found', 404);
     const parametersSnapshot = resolveParameters(
       plantParameters(plant),
-      input.overrides,
+      input.parameters,
     );
     const projections = await store.find('projections', {
       plantId: input.plantId,
@@ -74,9 +75,9 @@ export class PlansService {
     const days = harvest
       .sort((a, b) => a.date!.localeCompare(b.date!))
       .map((row) => {
-        const targetBoxes = decimal(Number(row.boxes) * multiplier);
+        const targetCrates = decimal(Number(row.crates) * multiplier);
         const calculation = this.calculator.calculateDay(
-          Number(targetBoxes),
+          Number(targetCrates),
           parametersSnapshot,
         );
         const support = areas
@@ -86,6 +87,8 @@ export class PlansService {
             plannedWorkers: Math.round(
               calculation.workers * Number(area.proportion),
             ),
+            arrivedWorkers: null,
+            startingWorkers: null,
             presentWorkers: null,
           }));
         const packingWorkers =
@@ -94,7 +97,7 @@ export class PlansService {
         ensure(packingWorkers >= 0, 'Area proportions exceed total staff', 409);
         return {
           date: row.date!,
-          targetBoxes,
+          targetCrates,
           workers: calculation.workers,
           hours: decimal(calculation.hours),
           margin: calculation.margin,
@@ -105,22 +108,30 @@ export class PlansService {
             {
               areaId: packing.id,
               plannedWorkers: packingWorkers,
+              arrivedWorkers: null,
+              startingWorkers: null,
               presentWorkers: null,
             },
           ],
         };
       });
-    const target = days.reduce((sum, d) => sum + Number(d.targetBoxes), 0);
-    const demand = commercial.reduce((sum, p) => sum + Number(p.boxes), 0);
+    const target = days.reduce((sum, d) => sum + Number(d.targetCrates), 0);
+    const demand = commercial.reduce((sum, p) => sum + Number(p.crates), 0);
     const gap = Math.max(0, demand - target);
     return {
       parametersSnapshot,
-      hasParameterOverrides: Object.keys(input.overrides ?? {}).length > 0,
+      hasModifiedParameters:
+        parameterChanges(parametersSnapshot, plantParameters(plant)).length > 0,
+      parameterChanges: parameterChanges(
+        parametersSnapshot,
+        plantParameters(plant),
+      ),
+      plantDefaults: plantParameters(plant),
       days,
       totals: {
-        targetBoxes: decimal(target),
-        commercialBoxes: decimal(demand),
-        commercialGapBoxes: decimal(gap),
+        targetCrates: decimal(target),
+        commercialCrates: decimal(demand),
+        commercialGapCrates: decimal(gap),
         commercialGapPercent: demand ? (gap / demand) * 100 : 0,
         commercialCoverage: ratio(target, demand),
         peakWorkers: Math.max(...days.map((d) => d.workers)),
@@ -176,7 +187,7 @@ export class PlansService {
         week: input.week,
         harvestScenario: input.harvestScenario,
         parametersSnapshot: calculated.parametersSnapshot,
-        hasParameterOverrides: calculated.hasParameterOverrides,
+        hasModifiedParameters: calculated.hasModifiedParameters,
         status: PlanStatus.DRAFT,
         createdById: actor.id,
         submittedAt: null,
@@ -189,7 +200,7 @@ export class PlansService {
         const saved = await store.save('planDays', {
           planId: plan.id,
           date: day.date,
-          targetBoxes: day.targetBoxes,
+          targetCrates: day.targetCrates,
           workers: day.workers,
           hours: day.hours,
           adjustedHours: null,
@@ -199,12 +210,12 @@ export class PlansService {
         for (const area of day.areas)
           await store.save('planDayAreas', { ...area, planDayId: saved.id });
       }
-      if (Number(calculated.totals.commercialGapBoxes) > 0)
+      if (Number(calculated.totals.commercialGapCrates) > 0)
         await store.save('alerts', {
           planDayId: firstDayId!,
           progressRecordId: null,
           type: AlertType.PLANNING,
-          message: `Commercial shortfall: ${calculated.totals.commercialGapBoxes} boxes (${calculated.totals.commercialGapPercent.toFixed(2)}%).`,
+          message: `Commercial shortfall: ${calculated.totals.commercialGapCrates} crates (${calculated.totals.commercialGapPercent.toFixed(2)}%).`,
           date: new Date(),
         });
       return this.detail(store, plan.id, actor);
@@ -237,15 +248,25 @@ export class PlansService {
         week: plan.week,
         type: ProjectionType.COMMERCIAL,
       })
-    ).reduce((sum, row) => sum + Number(row.boxes), 0);
-    const target = days.reduce((sum, d) => sum + Number(d.targetBoxes), 0);
+    ).reduce((sum, row) => sum + Number(row.crates), 0);
+    const target = days.reduce((sum, d) => sum + Number(d.targetCrates), 0);
+    const plant = await store.get('plants', plan.plantId);
+    ensure(plant, 'Plant not found', 404);
     return {
       ...plan,
+      plantName: plant.name,
+      plantDefaults: plantParameters(plant),
+      parameterChanges: parameterChanges(
+        plan.parametersSnapshot,
+        plantParameters(plant),
+      ),
+      startDate: days[0]?.date ?? null,
+      endDate: days.at(-1)?.date ?? null,
       days,
       totals: {
-        targetBoxes: decimal(target),
-        commercialBoxes: decimal(demand),
-        commercialGapBoxes: decimal(Math.max(0, demand - target)),
+        targetCrates: decimal(target),
+        commercialCrates: decimal(demand),
+        commercialGapCrates: decimal(Math.max(0, demand - target)),
         commercialGapPercent: demand
           ? (Math.max(0, demand - target) / demand) * 100
           : 0,
@@ -261,15 +282,15 @@ export class PlansService {
     };
   }
   private dayMetrics(
-    day: { targetBoxes: string; workers: number; hours: string },
+    day: { targetCrates: string; workers: number; hours: string },
     plan: Plan,
   ) {
     const p = plan.parametersSnapshot;
-    const target = Number(day.targetBoxes);
+    const target = Number(day.targetCrates);
     const hours = Number(day.hours);
     const margin = target
       ? (day.workers *
-          Number(p.boxesPerWorkerHour) *
+          Number(p.cratesPerWorkerHour) *
           Number(p.efficiencyFactor) *
           (Number(p.shiftHours) + Number(p.maxOvertimeHours))) /
           target -
@@ -284,22 +305,34 @@ export class PlansService {
           ? 'RIESGO_TURNO_EXTRA'
           : hours > Number(p.shiftHours)
             ? 'HORAS_EXTRA'
-            : 'DENTRO_JORNADA',
+            : margin !== null && margin < Number(p.volumeTolerancePercent) / 100
+              ? 'MARGEN_BAJO'
+              : 'DENTRO_JORNADA',
     };
   }
   get(id: number, actor: Actor) {
     return this.detail(this.store, id, actor);
   }
   async list(query: PlanFilter, actor: Actor) {
-    const { page, limit, ...filter } = query;
+    const { page, limit, status, ...filter } = query;
     const plans = await this.store.find(
       'plans',
       { ...filter, plantId: scopedPlant(actor, query.plantId) },
       { orderBy: 'id', direction: 'DESC' },
     );
-    const result = paginate(plans, { page, limit });
+    const statusCounts = Object.fromEntries(
+      Object.values(PlanStatus).map((value) => [
+        value,
+        plans.filter((p) => p.status === value).length,
+      ]),
+    );
+    const result = paginate(
+      plans.filter((p) => !status || p.status === status),
+      { page, limit },
+    );
     return {
       ...result,
+      statusCounts,
       items: await Promise.all(
         result.items.map((plan) => this.detail(this.store, plan.id, actor)),
       ),

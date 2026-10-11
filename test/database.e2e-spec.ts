@@ -1,3 +1,4 @@
+import { PackingV21791679847749 } from '../src/database/migrations/1791679847749-PackingV2';
 import { DataSource, QueryRunner } from 'typeorm';
 import { databaseOptions } from '../src/database/database.config';
 import { PlanEntity } from '../src/modules/plans/infrastructure/persistence/plan.entity';
@@ -46,18 +47,18 @@ describe('PostgreSQL schema (requires migrated test database)', () => {
   }
   async function createPlan() {
     const plans = await runner.manager.query<{ id: number }[]>(
-      `INSERT INTO plan ("plantaId", "frutaId", anio, semana, "escenarioCosecha", "parametrosUsados", "parametrosSobrescritos", estado, "creadoPorId") SELECT $1, $2, 2026, 42, 'PROYECTADA', jsonb_build_object('rendimientoPersonaHora', "rendimientoPersonaHora"::text, 'personalMaximo', "personalMaximo", 'horasJornada', "horasJornada"::text, 'horasExtraMax', "horasExtraMax"::text, 'horaInicio', "horaInicio"::text, 'factorEficiencia', "factorEficiencia"::text, 'toleranciaVolumen', "toleranciaVolumen"::text), false, 'APROBADO', $3 FROM planta WHERE id = $1 RETURNING id`,
+      `INSERT INTO plan ("plantaId", "frutaId", anio, semana, "escenarioCosecha", "parametrosUsados", "parametrosModificados", estado, "creadoPorId") SELECT $1, $2, 2026, 42, 'PROYECTADA', jsonb_build_object('rendimientoPersonaHora', "rendimientoPersonaHora"::text, 'personalMaximo', "personalMaximo", 'horasJornada', "horasJornada"::text, 'horasExtraMax', "horasExtraMax"::text, 'horaInicio', "horaInicio"::text, 'factorEficiencia', "factorEficiencia"::text, 'toleranciaVolumen', "toleranciaVolumen"::text), false, 'APROBADO', $3 FROM planta WHERE id = $1 RETURNING id`,
       [plantId, fruitId, userId],
     );
     return plans[0].id;
   }
   it('enforces harvest/commercial fields and ISO week, and prevents mutation', async () => {
-    const sql = `INSERT INTO proyeccion ("plantaId", "frutaId", tipo, anio, semana, fecha, cajas) VALUES ($1, $2, $3, 2026, 42, $4, 11180)`;
+    const sql = `INSERT INTO proyeccion ("plantaId", "frutaId", tipo, anio, semana, fecha, jabas) VALUES ($1, $2, $3, 2026, 42, $4, 11180)`;
     await expectInvalid(sql, [plantId, fruitId, 'COSECHA', null]);
     await expectInvalid(sql, [plantId, fruitId, 'COMERCIAL', null]);
     await expectInvalid(sql, [plantId, fruitId, 'COSECHA', '2026-01-01']);
     await runner.query(sql, [plantId, fruitId, 'COSECHA', '2026-10-12']);
-    await expectInvalid(`UPDATE proyeccion SET cajas = 1`);
+    await expectInvalid(`UPDATE proyeccion SET jabas = 1`);
     await expectInvalid(`DELETE FROM proyeccion`);
   });
   it('rejects duplicate active plans and retains the configuration snapshot', async () => {
@@ -70,7 +71,7 @@ describe('PostgreSQL schema (requires migrated test database)', () => {
       [plantId],
     );
     const plan = await runner.manager.findOneByOrFail(PlanEntity, { id });
-    expect(Number(plan.parametersSnapshot.boxesPerWorkerHour)).toBe(5);
+    expect(Number(plan.parametersSnapshot.cratesPerWorkerHour)).toBe(5.9);
     await expectInvalid(`UPDATE plan SET estado = 'RECHAZADO' WHERE id = $1`, [
       id,
     ]);
@@ -84,7 +85,7 @@ describe('PostgreSQL schema (requires migrated test database)', () => {
   it('enforces one jornada per day and supports negative closing differences', async () => {
     const id = await createPlan();
     const days = await runner.manager.query<{ id: number }[]>(
-      `INSERT INTO plan_dia ("planId", fecha, "cajasMeta", trabajadores, horas) VALUES ($1, '2026-10-12', 11180, 280, 9.98) RETURNING id`,
+      `INSERT INTO plan_dia ("planId", fecha, "jabasMeta", trabajadores, horas) VALUES ($1, '2026-10-12', 11180, 280, 9.98) RETURNING id`,
       [id],
     );
     const day = days[0].id;
@@ -99,6 +100,13 @@ describe('PostgreSQL schema (requires migrated test database)', () => {
       `UPDATE plan_dia SET "horasActualizadas" = 12, "motivoAjuste" = 'PERSONAL_PRESENTE' WHERE id = $1`,
       [day],
     );
+  });
+  it('blocks unit migration and rollback when operational data exists', async () => {
+    const id = await createPlan();
+    const migration = new PackingV21791679847749();
+    await expect(migration.up(runner)).rejects.toThrow('changes fruit units');
+    await expect(migration.down(runner)).rejects.toThrow('changes fruit units');
+    expect(await runner.manager.findOneBy(PlanEntity, { id })).not.toBeNull();
   });
   it('has no schema drift after applying migrations', async () => {
     const diff = await source.driver.createSchemaBuilder().log();

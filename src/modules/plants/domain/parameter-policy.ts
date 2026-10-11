@@ -25,7 +25,7 @@ export function resolveParameters(
 }
 export function plantParameters(plant: PlantParameters): PlantParameters {
   return {
-    boxesPerWorkerHour: plant.boxesPerWorkerHour,
+    cratesPerWorkerHour: plant.cratesPerWorkerHour,
     maxWorkers: plant.maxWorkers,
     shiftHours: plant.shiftHours,
     maxOvertimeHours: plant.maxOvertimeHours,
@@ -33,4 +33,21 @@ export function plantParameters(plant: PlantParameters): PlantParameters {
     efficiencyFactor: plant.efficiencyFactor,
     volumeTolerancePercent: plant.volumeTolerancePercent,
   };
+}
+
+export function parameterChanges(
+  values: PlantParameters,
+  defaults: PlantParameters,
+) {
+  return (Object.keys(defaults) as (keyof PlantParameters)[])
+    .filter((key) =>
+      key === 'startTime'
+        ? String(values[key]).slice(0, 5) !== String(defaults[key]).slice(0, 5)
+        : Number(values[key]) !== Number(defaults[key]),
+    )
+    .map((key) => ({
+      key,
+      value: String(values[key]),
+      defaultValue: String(defaults[key]),
+    }));
 }

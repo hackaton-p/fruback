@@ -10,6 +10,10 @@ import { AreaEntity } from '../../../catalogs/infrastructure/persistence/area.en
   'ck_plan_dia_area_1',
   `"trabajadoresPresentes" IS NULL OR "trabajadoresPresentes" >= 0`,
 )
+@Check(
+  'ck_plan_day_area_start',
+  `"trabajadoresLlegaron" >= 0 AND "trabajadoresInicio" >= 0 AND "trabajadoresInicio" <= "trabajadoresLlegaron"`,
+)
 @Index('idx_plan_dia_area_0', ['planDayId', 'areaId'], { unique: true })
 export class PlanDayAreaEntity extends BaseEntity {
   @Column({ name: 'planDiaId', type: 'integer' }) planDayId!: number;
@@ -22,6 +26,10 @@ export class PlanDayAreaEntity extends BaseEntity {
   area!: Relation<AreaEntity>;
   @Column({ name: 'trabajadoresPlan', type: 'integer' })
   plannedWorkers!: number;
+  @Column({ name: 'trabajadoresLlegaron', type: 'integer', nullable: true })
+  arrivedWorkers!: number | null;
+  @Column({ name: 'trabajadoresInicio', type: 'integer', nullable: true })
+  startingWorkers!: number | null;
   @Column({ name: 'trabajadoresPresentes', type: 'integer', nullable: true })
   presentWorkers!: number | null;
 }

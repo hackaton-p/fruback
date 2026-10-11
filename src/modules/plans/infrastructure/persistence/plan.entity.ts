@@ -46,8 +46,8 @@ export class PlanEntity extends BaseEntity {
     transformer: plantParametersTransformer,
   })
   parametersSnapshot!: PlantParameters;
-  @Column({ name: 'parametrosSobrescritos', type: 'boolean', default: false })
-  hasParameterOverrides!: boolean;
+  @Column({ name: 'parametrosModificados', type: 'boolean', default: false })
+  hasModifiedParameters!: boolean;
   @Column({ name: 'estado', type: 'varchar', length: 255, default: 'BORRADOR' })
   status!: PlanStatus;
   @Column({ name: 'creadoPorId', type: 'integer' }) createdById!: number;

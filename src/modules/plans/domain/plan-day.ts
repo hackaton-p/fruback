@@ -3,7 +3,7 @@ import type { HourAdjustmentReason } from './enums';
 export interface PlanDay extends DomainRecord {
   planId: number;
   date: string;
-  targetBoxes: string;
+  targetCrates: string;
   workers: number;
   hours: string;
   adjustedHours: string | null;

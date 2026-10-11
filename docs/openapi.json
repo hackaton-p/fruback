@@ -861,7 +861,7 @@
     },
     "/api/projections/import": {
       "post": {
-        "description": "One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. Quantities are BOXES (8.2 kg) or TONNES. Entire import is atomic; repeated imports return 409.",
+        "description": "One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. All quantities are crates (jabas), without conversions. Entire import is atomic; repeated imports return 409.",
         "operationId": "ProjectionsController_import",
         "parameters": [],
         "requestBody": {
@@ -906,14 +906,6 @@
                       "COSECHA",
                       "COMERCIAL"
                     ]
-                  },
-                  "unit": {
-                    "type": "string",
-                    "enum": [
-                      "BOXES",
-                      "TONNES"
-                    ],
-                    "default": "BOXES"
                   }
                 }
               }
@@ -1144,30 +1136,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "items",
-                    "total",
-                    "page",
-                    "limit"
-                  ],
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PlanDetailsResponse"
-                      }
-                    },
-                    "total": {
-                      "type": "integer"
-                    },
-                    "page": {
-                      "type": "integer"
-                    },
-                    "limit": {
-                      "type": "integer"
-                    }
-                  }
+                  "$ref": "#/components/schemas/PlanListResponse"
                 }
               }
             }
@@ -1592,6 +1561,68 @@
         ]
       }
     },
+    "/api/workdays/estimate": {
+      "get": {
+        "operationId": "WorkdaysController_estimate",
+        "parameters": [
+          {
+            "name": "planDayId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "workers",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkdayEstimateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Estimate opening hours and end time without saving",
+        "tags": [
+          "Execution"
+        ]
+      }
+    },
     "/api/workdays/{id}": {
       "get": {
         "operationId": "WorkdaysController_get",
@@ -1646,8 +1677,9 @@
         ]
       }
     },
-    "/api/workdays/{id}/progress": {
+    "/api/workdays/{id}/records": {
       "post": {
+        "description": "Send only the fields for the selected type. Events can share a timestamp and are ordered by id. AVANCE uses cumulative crates; PERSONAL applies a signed change to one area; VOLUMEN replaces expected daily crates.",
         "operationId": "WorkdaysController_progress",
         "parameters": [
           {
@@ -1704,7 +1736,7 @@
             "session": []
           }
         ],
-        "summary": "Record cumulative progress and generate alerts",
+        "summary": "Record AVANCE, PERSONAL or VOLUMEN and snapshot estimated hours",
         "tags": [
           "Execution"
         ]
@@ -3856,7 +3888,7 @@
           "name": {
             "type": "string"
           },
-          "boxesPerWorkerHour": {
+          "cratesPerWorkerHour": {
             "type": "string"
           },
           "maxWorkers": {
@@ -3883,7 +3915,7 @@
           "createdAt",
           "updatedAt",
           "name",
-          "boxesPerWorkerHour",
+          "cratesPerWorkerHour",
           "maxWorkers",
           "shiftHours",
           "maxOvertimeHours",
@@ -3895,7 +3927,7 @@
       "ParameterOverridesDto": {
         "type": "object",
         "properties": {
-          "boxesPerWorkerHour": {
+          "cratesPerWorkerHour": {
             "type": "number"
           },
           "maxWorkers": {
@@ -4069,7 +4101,7 @@
             "type": "object",
             "nullable": true
           },
-          "boxes": {
+          "crates": {
             "type": "string"
           }
         },
@@ -4084,7 +4116,7 @@
           "year",
           "week",
           "date",
-          "boxes"
+          "crates"
         ]
       },
       "ImportResponse": {
@@ -4103,6 +4135,42 @@
         "required": [
           "imported",
           "items"
+        ]
+      },
+      "PlantParametersDto": {
+        "type": "object",
+        "properties": {
+          "cratesPerWorkerHour": {
+            "type": "number"
+          },
+          "maxWorkers": {
+            "type": "number"
+          },
+          "shiftHours": {
+            "type": "number"
+          },
+          "maxOvertimeHours": {
+            "type": "number"
+          },
+          "startTime": {
+            "type": "string",
+            "example": "17:00"
+          },
+          "efficiencyFactor": {
+            "type": "number"
+          },
+          "volumeTolerancePercent": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "cratesPerWorkerHour",
+          "maxWorkers",
+          "shiftHours",
+          "maxOvertimeHours",
+          "startTime",
+          "efficiencyFactor",
+          "volumeTolerancePercent"
         ]
       },
       "CreatePlanDto": {
@@ -4129,8 +4197,8 @@
               "-10"
             ]
           },
-          "overrides": {
-            "$ref": "#/components/schemas/ParameterOverridesDto"
+          "parameters": {
+            "$ref": "#/components/schemas/PlantParametersDto"
           }
         },
         "required": [
@@ -4138,13 +4206,14 @@
           "fruitId",
           "year",
           "week",
-          "harvestScenario"
+          "harvestScenario",
+          "parameters"
         ]
       },
       "ParametersResponse": {
         "type": "object",
         "properties": {
-          "boxesPerWorkerHour": {
+          "cratesPerWorkerHour": {
             "type": "string"
           },
           "maxWorkers": {
@@ -4167,7 +4236,7 @@
           }
         },
         "required": [
-          "boxesPerWorkerHour",
+          "cratesPerWorkerHour",
           "maxWorkers",
           "shiftHours",
           "maxOvertimeHours",
@@ -4176,9 +4245,36 @@
           "volumeTolerancePercent"
         ]
       },
+      "ParameterChangeResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "defaultValue": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "defaultValue"
+        ]
+      },
       "SimulatedAreaResponse": {
         "type": "object",
         "properties": {
+          "arrivedWorkers": {
+            "type": "object",
+            "nullable": true
+          },
+          "startingWorkers": {
+            "type": "object",
+            "nullable": true
+          },
           "areaId": {
             "type": "number"
           },
@@ -4191,6 +4287,8 @@
           }
         },
         "required": [
+          "arrivedWorkers",
+          "startingWorkers",
           "areaId",
           "plannedWorkers",
           "presentWorkers"
@@ -4202,7 +4300,7 @@
           "date": {
             "type": "string"
           },
-          "targetBoxes": {
+          "targetCrates": {
             "type": "string"
           },
           "workers": {
@@ -4230,7 +4328,7 @@
         },
         "required": [
           "date",
-          "targetBoxes",
+          "targetCrates",
           "workers",
           "hours",
           "margin",
@@ -4242,13 +4340,13 @@
       "PlanTotalsResponse": {
         "type": "object",
         "properties": {
-          "targetBoxes": {
+          "targetCrates": {
             "type": "string"
           },
-          "commercialBoxes": {
+          "commercialCrates": {
             "type": "string"
           },
-          "commercialGapBoxes": {
+          "commercialGapCrates": {
             "type": "string"
           },
           "commercialGapPercent": {
@@ -4269,9 +4367,9 @@
           }
         },
         "required": [
-          "targetBoxes",
-          "commercialBoxes",
-          "commercialGapBoxes",
+          "targetCrates",
+          "commercialCrates",
+          "commercialGapCrates",
           "commercialGapPercent",
           "commercialCoverage",
           "peakWorkers",
@@ -4282,10 +4380,19 @@
       "SimulationResponse": {
         "type": "object",
         "properties": {
+          "plantDefaults": {
+            "$ref": "#/components/schemas/ParametersResponse"
+          },
+          "parameterChanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterChangeResponse"
+            }
+          },
           "parametersSnapshot": {
             "$ref": "#/components/schemas/ParametersResponse"
           },
-          "hasParameterOverrides": {
+          "hasModifiedParameters": {
             "type": "boolean"
           },
           "days": {
@@ -4299,8 +4406,10 @@
           }
         },
         "required": [
+          "plantDefaults",
+          "parameterChanges",
           "parametersSnapshot",
-          "hasParameterOverrides",
+          "hasModifiedParameters",
           "days",
           "totals"
         ]
@@ -4308,6 +4417,14 @@
       "PlanDayAreaResponse": {
         "type": "object",
         "properties": {
+          "arrivedWorkers": {
+            "type": "object",
+            "nullable": true
+          },
+          "startingWorkers": {
+            "type": "object",
+            "nullable": true
+          },
           "id": {
             "type": "number"
           },
@@ -4334,6 +4451,8 @@
           }
         },
         "required": [
+          "arrivedWorkers",
+          "startingWorkers",
           "id",
           "createdAt",
           "updatedAt",
@@ -4346,6 +4465,13 @@
       "WorkdayResponse": {
         "type": "object",
         "properties": {
+          "initialEstimatedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "expectedDailyCrates": {
+            "type": "string"
+          },
           "id": {
             "type": "number"
           },
@@ -4371,17 +4497,17 @@
           "presentWorkers": {
             "type": "number"
           },
-          "receivedBoxes": {
+          "receivedCrates": {
             "type": "string"
           },
           "workedHours": {
             "type": "object",
             "nullable": true
           },
-          "processedBoxes": {
+          "processedCrates": {
             "type": "string"
           },
-          "discardedBoxes": {
+          "discardedCrates": {
             "type": "object",
             "nullable": true
           },
@@ -4403,6 +4529,8 @@
           }
         },
         "required": [
+          "initialEstimatedHours",
+          "expectedDailyCrates",
           "id",
           "createdAt",
           "updatedAt",
@@ -4410,10 +4538,10 @@
           "startedAt",
           "closedAt",
           "presentWorkers",
-          "receivedBoxes",
+          "receivedCrates",
           "workedHours",
-          "processedBoxes",
-          "discardedBoxes",
+          "processedCrates",
+          "discardedCrates",
           "looseKg",
           "fixedKg",
           "targetMet",
@@ -4488,7 +4616,7 @@
           "date": {
             "type": "string"
           },
-          "targetBoxes": {
+          "targetCrates": {
             "type": "string"
           },
           "workers": {
@@ -4547,7 +4675,7 @@
           "updatedAt",
           "planId",
           "date",
-          "targetBoxes",
+          "targetCrates",
           "workers",
           "hours",
           "adjustedHours",
@@ -4598,7 +4726,7 @@
           "parametersSnapshot": {
             "$ref": "#/components/schemas/ParametersResponse"
           },
-          "hasParameterOverrides": {
+          "hasModifiedParameters": {
             "type": "boolean"
           },
           "status": {
@@ -4631,6 +4759,26 @@
             "type": "object",
             "nullable": true
           },
+          "plantName": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "object",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "object",
+            "nullable": true
+          },
+          "plantDefaults": {
+            "$ref": "#/components/schemas/ParametersResponse"
+          },
+          "parameterChanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterChangeResponse"
+            }
+          },
           "days": {
             "type": "array",
             "items": {
@@ -4651,15 +4799,54 @@
           "week",
           "harvestScenario",
           "parametersSnapshot",
-          "hasParameterOverrides",
+          "hasModifiedParameters",
           "status",
           "createdById",
           "submittedAt",
           "approvedById",
           "approvedAt",
           "approvalComment",
+          "plantName",
+          "startDate",
+          "endDate",
+          "plantDefaults",
+          "parameterChanges",
           "days",
           "totals"
+        ]
+      },
+      "PlanListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanDetailsResponse"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "statusCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Counts across all states, respecting plant, fruit and week filters, before pagination"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "statusCounts"
         ]
       },
       "RejectPlanDto": {
@@ -4676,6 +4863,13 @@
       "WorkdayListResponse": {
         "type": "object",
         "properties": {
+          "initialEstimatedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "expectedDailyCrates": {
+            "type": "string"
+          },
           "id": {
             "type": "number"
           },
@@ -4701,17 +4895,17 @@
           "presentWorkers": {
             "type": "number"
           },
-          "receivedBoxes": {
+          "receivedCrates": {
             "type": "string"
           },
           "workedHours": {
             "type": "object",
             "nullable": true
           },
-          "processedBoxes": {
+          "processedCrates": {
             "type": "string"
           },
-          "discardedBoxes": {
+          "discardedCrates": {
             "type": "object",
             "nullable": true
           },
@@ -4742,6 +4936,8 @@
           }
         },
         "required": [
+          "initialEstimatedHours",
+          "expectedDailyCrates",
           "id",
           "createdAt",
           "updatedAt",
@@ -4749,10 +4945,10 @@
           "startedAt",
           "closedAt",
           "presentWorkers",
-          "receivedBoxes",
+          "receivedCrates",
           "workedHours",
-          "processedBoxes",
-          "discardedBoxes",
+          "processedCrates",
+          "discardedCrates",
           "looseKg",
           "fixedKg",
           "targetMet",
@@ -4760,6 +4956,58 @@
           "planId",
           "plantId",
           "date"
+        ]
+      },
+      "WorkdayEstimateResponse": {
+        "type": "object",
+        "properties": {
+          "productivity": {
+            "type": "number"
+          },
+          "remainingCrates": {
+            "type": "number"
+          },
+          "additionalWorkers": {
+            "type": "object",
+            "nullable": true
+          },
+          "expectedReceived": {
+            "type": "number"
+          },
+          "deviationPercent": {
+            "type": "object",
+            "nullable": true
+          },
+          "volumeAlert": {
+            "type": "boolean"
+          },
+          "estimatedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "requiresAdjustment": {
+            "type": "boolean"
+          },
+          "riskOfExtraShift": {
+            "type": "boolean"
+          },
+          "estimatedEndAt": {
+            "type": "object",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "productivity",
+          "remainingCrates",
+          "additionalWorkers",
+          "expectedReceived",
+          "deviationPercent",
+          "volumeAlert",
+          "estimatedHours",
+          "requiresAdjustment",
+          "riskOfExtraShift",
+          "estimatedEndAt"
         ]
       },
       "PlanDayResponse": {
@@ -4782,7 +5030,7 @@
           "date": {
             "type": "string"
           },
-          "targetBoxes": {
+          "targetCrates": {
             "type": "string"
           },
           "workers": {
@@ -4810,7 +5058,7 @@
           "updatedAt",
           "planId",
           "date",
-          "targetBoxes",
+          "targetCrates",
           "workers",
           "hours",
           "adjustedHours",
@@ -4820,6 +5068,30 @@
       "ProgressRecordResponse": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "AVANCE",
+              "PERSONAL",
+              "VOLUMEN"
+            ]
+          },
+          "areaId": {
+            "type": "object",
+            "nullable": true
+          },
+          "staffChange": {
+            "type": "object",
+            "nullable": true
+          },
+          "expectedDailyCrates": {
+            "type": "object",
+            "nullable": true
+          },
+          "estimatedHours": {
+            "type": "object",
+            "nullable": true
+          },
           "id": {
             "type": "number"
           },
@@ -4838,11 +5110,13 @@
             "format": "date-time",
             "type": "string"
           },
-          "cumulativeReceivedBoxes": {
-            "type": "string"
+          "cumulativeReceivedCrates": {
+            "type": "object",
+            "nullable": true
           },
-          "cumulativeProcessedBoxes": {
-            "type": "string"
+          "cumulativeProcessedCrates": {
+            "type": "object",
+            "nullable": true
           },
           "presentWorkers": {
             "type": "number"
@@ -4852,13 +5126,18 @@
           }
         },
         "required": [
+          "type",
+          "areaId",
+          "staffChange",
+          "expectedDailyCrates",
+          "estimatedHours",
           "id",
           "createdAt",
           "updatedAt",
           "workdayId",
           "recordedAt",
-          "cumulativeReceivedBoxes",
-          "cumulativeProcessedBoxes",
+          "cumulativeReceivedCrates",
+          "cumulativeProcessedCrates",
           "presentWorkers",
           "recordedById"
         ]
@@ -4866,6 +5145,16 @@
       "ExecutionMetricsResponse": {
         "type": "object",
         "properties": {
+          "productivity": {
+            "type": "number"
+          },
+          "remainingCrates": {
+            "type": "number"
+          },
+          "additionalWorkers": {
+            "type": "object",
+            "nullable": true
+          },
           "expectedReceived": {
             "type": "number"
           },
@@ -4888,6 +5177,9 @@
           }
         },
         "required": [
+          "productivity",
+          "remainingCrates",
+          "additionalWorkers",
           "expectedReceived",
           "deviationPercent",
           "volumeAlert",
@@ -4899,6 +5191,13 @@
       "WorkdayDetailsResponse": {
         "type": "object",
         "properties": {
+          "initialEstimatedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "expectedDailyCrates": {
+            "type": "string"
+          },
           "id": {
             "type": "number"
           },
@@ -4924,17 +5223,17 @@
           "presentWorkers": {
             "type": "number"
           },
-          "receivedBoxes": {
+          "receivedCrates": {
             "type": "string"
           },
           "workedHours": {
             "type": "object",
             "nullable": true
           },
-          "processedBoxes": {
+          "processedCrates": {
             "type": "string"
           },
-          "discardedBoxes": {
+          "discardedCrates": {
             "type": "object",
             "nullable": true
           },
@@ -4980,6 +5279,8 @@
           }
         },
         "required": [
+          "initialEstimatedHours",
+          "expectedDailyCrates",
           "id",
           "createdAt",
           "updatedAt",
@@ -4987,10 +5288,10 @@
           "startedAt",
           "closedAt",
           "presentWorkers",
-          "receivedBoxes",
+          "receivedCrates",
           "workedHours",
-          "processedBoxes",
-          "discardedBoxes",
+          "processedCrates",
+          "discardedCrates",
           "looseKg",
           "fixedKg",
           "targetMet",
@@ -5008,13 +5309,17 @@
           "areaId": {
             "type": "number"
           },
-          "workers": {
+          "arrivedWorkers": {
+            "type": "number"
+          },
+          "startingWorkers": {
             "type": "number"
           }
         },
         "required": [
           "areaId",
-          "workers"
+          "arrivedWorkers",
+          "startingWorkers"
         ]
       },
       "OpenWorkdayDto": {
@@ -5042,33 +5347,71 @@
       "ProgressDto": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "AVANCE",
+              "PERSONAL",
+              "VOLUMEN"
+            ]
+          },
           "recordedAt": {
             "type": "string",
             "format": "date-time"
           },
-          "cumulativeReceivedBoxes": {
-            "type": "number"
+          "cumulativeReceivedCrates": {
+            "type": "number",
+            "description": "Required for AVANCE"
           },
-          "cumulativeProcessedBoxes": {
-            "type": "number"
+          "cumulativeProcessedCrates": {
+            "type": "number",
+            "description": "Required for AVANCE"
           },
-          "attendance": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AttendanceDto"
-            }
+          "areaId": {
+            "type": "number",
+            "description": "Required for PERSONAL"
+          },
+          "staffChange": {
+            "type": "number",
+            "description": "Nonzero signed change; PERSONAL only"
+          },
+          "expectedDailyCrates": {
+            "type": "number",
+            "description": "Required for VOLUMEN"
           }
         },
         "required": [
-          "recordedAt",
-          "cumulativeReceivedBoxes",
-          "cumulativeProcessedBoxes",
-          "attendance"
+          "type",
+          "recordedAt"
         ]
       },
       "ProgressResultResponse": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "AVANCE",
+              "PERSONAL",
+              "VOLUMEN"
+            ]
+          },
+          "areaId": {
+            "type": "object",
+            "nullable": true
+          },
+          "staffChange": {
+            "type": "object",
+            "nullable": true
+          },
+          "expectedDailyCrates": {
+            "type": "object",
+            "nullable": true
+          },
+          "estimatedHours": {
+            "type": "object",
+            "nullable": true
+          },
           "id": {
             "type": "number"
           },
@@ -5087,11 +5430,13 @@
             "format": "date-time",
             "type": "string"
           },
-          "cumulativeReceivedBoxes": {
-            "type": "string"
+          "cumulativeReceivedCrates": {
+            "type": "object",
+            "nullable": true
           },
-          "cumulativeProcessedBoxes": {
-            "type": "string"
+          "cumulativeProcessedCrates": {
+            "type": "object",
+            "nullable": true
           },
           "presentWorkers": {
             "type": "number"
@@ -5110,13 +5455,18 @@
           }
         },
         "required": [
+          "type",
+          "areaId",
+          "staffChange",
+          "expectedDailyCrates",
+          "estimatedHours",
           "id",
           "createdAt",
           "updatedAt",
           "workdayId",
           "recordedAt",
-          "cumulativeReceivedBoxes",
-          "cumulativeProcessedBoxes",
+          "cumulativeReceivedCrates",
+          "cumulativeProcessedCrates",
           "presentWorkers",
           "recordedById",
           "metrics",
@@ -5129,13 +5479,13 @@
           "workedHours": {
             "type": "number"
           },
-          "receivedBoxes": {
+          "receivedCrates": {
             "type": "number"
           },
-          "processedBoxes": {
+          "processedCrates": {
             "type": "number"
           },
-          "discardedBoxes": {
+          "discardedCrates": {
             "type": "number"
           },
           "looseKg": {
@@ -5147,9 +5497,8 @@
         },
         "required": [
           "workedHours",
-          "receivedBoxes",
-          "processedBoxes",
-          "discardedBoxes",
+          "processedCrates",
+          "discardedCrates",
           "looseKg",
           "fixedKg"
         ]
@@ -5173,9 +5522,64 @@
           "reason"
         ]
       },
+      "DashboardReferenceResponse": {
+        "type": "object",
+        "properties": {
+          "plantId": {
+            "type": "number"
+          },
+          "shiftHours": {
+            "type": "number"
+          },
+          "productivity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "plantId",
+          "shiftHours",
+          "productivity"
+        ]
+      },
+      "DashboardInsightResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "object",
+            "nullable": true
+          },
+          "reference": {
+            "type": "object",
+            "nullable": true
+          },
+          "dates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "value",
+          "reference",
+          "dates"
+        ]
+      },
       "DashboardAreaResponse": {
         "type": "object",
         "properties": {
+          "arrivedWorkers": {
+            "type": "object",
+            "nullable": true
+          },
+          "startingWorkers": {
+            "type": "object",
+            "nullable": true
+          },
           "id": {
             "type": "number"
           },
@@ -5206,6 +5610,8 @@
           }
         },
         "required": [
+          "arrivedWorkers",
+          "startingWorkers",
           "id",
           "createdAt",
           "updatedAt",
@@ -5219,6 +5625,10 @@
       "DailyMetricsResponse": {
         "type": "object",
         "properties": {
+          "cratesPerWorker": {
+            "type": "object",
+            "nullable": true
+          },
           "fulfillment": {
             "type": "object",
             "nullable": true
@@ -5245,6 +5655,7 @@
           }
         },
         "required": [
+          "cratesPerWorker",
           "fulfillment",
           "absenteeism",
           "productivity",
@@ -5256,6 +5667,15 @@
       "DashboardDayResponse": {
         "type": "object",
         "properties": {
+          "defaultShiftHours": {
+            "type": "number"
+          },
+          "defaultProductivity": {
+            "type": "number"
+          },
+          "maxOvertimeHours": {
+            "type": "number"
+          },
           "planId": {
             "type": "number"
           },
@@ -5268,7 +5688,7 @@
           "date": {
             "type": "string"
           },
-          "targetBoxes": {
+          "targetCrates": {
             "type": "string"
           },
           "plannedWorkers": {
@@ -5297,11 +5717,14 @@
           }
         },
         "required": [
+          "defaultShiftHours",
+          "defaultProductivity",
+          "maxOvertimeHours",
           "planId",
           "plantId",
           "fruitId",
           "date",
-          "targetBoxes",
+          "targetCrates",
           "plannedWorkers",
           "plannedHours",
           "workday",
@@ -5312,10 +5735,23 @@
       "DashboardKpisResponse": {
         "type": "object",
         "properties": {
-          "targetBoxes": {
+          "weeklyTargetCrates": {
             "type": "string"
           },
-          "processedBoxes": {
+          "overtimeDays": {
+            "type": "number"
+          },
+          "closedDays": {
+            "type": "number"
+          },
+          "cratesPerWorker": {
+            "type": "object",
+            "nullable": true
+          },
+          "targetCrates": {
+            "type": "string"
+          },
+          "processedCrates": {
             "type": "string"
           },
           "fulfillment": {
@@ -5340,8 +5776,12 @@
           }
         },
         "required": [
-          "targetBoxes",
-          "processedBoxes",
+          "weeklyTargetCrates",
+          "overtimeDays",
+          "closedDays",
+          "cratesPerWorker",
+          "targetCrates",
+          "processedCrates",
           "fulfillment",
           "averageHours",
           "staffingRatio",
@@ -5352,6 +5792,37 @@
       "DashboardResponse": {
         "type": "object",
         "properties": {
+          "pendingPlans": {
+            "type": "number"
+          },
+          "alertCount": {
+            "type": "number"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardReferenceResponse"
+            }
+          },
+          "insights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardInsightResponse"
+            }
+          },
+          "indicators": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true,
+              "enum": [
+                "OK",
+                "WARNING",
+                "ALERT",
+                null
+              ]
+            }
+          },
           "year": {
             "type": "number"
           },
@@ -5373,6 +5844,11 @@
           }
         },
         "required": [
+          "pendingPlans",
+          "alertCount",
+          "references",
+          "insights",
+          "indicators",
           "year",
           "week",
           "plantId",

@@ -8,5 +8,5 @@ export interface Projection extends DomainRecord {
   year: number;
   week: number;
   date: string | null;
-  boxes: string;
+  crates: string;
 }

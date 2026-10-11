@@ -1,6 +1,6 @@
 # Pura Fruit · Packing API
 
-Backend del MVP: NestJS 11, TypeORM, PostgreSQL 17, Better Auth y Scalar. Node.js 24 y pnpm 11.10.0.
+Backend del MVP v2 (fruta únicamente en jabas): NestJS 11, TypeORM, PostgreSQL 17, Better Auth y Scalar. Node.js 24 y pnpm 11.10.0.
 
 Incluye autenticación por email/contraseña, permisos por rol y planta, configuración, catálogos, importación XLSX, simulación y aprobación de planes, ejecución diaria, alertas y dashboard semanal.
 
@@ -101,3 +101,7 @@ Las pruebas HTTP del MVP crean datos de prueba identificados por ejecución; usa
 `docs:export` genera `docs/openapi.json` desde los controladores y el esquema de Better Auth, usando una base migrada y la configuración de autenticación. `scalar.config.json` configura la guía y la referencia local para Scalar Docs. Las skills solicitadas están instaladas en `.agents/skills` y registradas en `skills-lock.json`.
 
 Ver [guía de endpoints y contratos](docs/getting-started.md).
+
+## Cambios del plan v2
+
+Ver [comparación y decisiones de migración](docs/plan-v2-validation.md). El contrato v2 usa `crates`, parámetros finales completos y registros de jornada tipados. La migración bloquea bases con proyecciones o planes v1: no existe equivalencia definida entre cajas y jabas. No convierte ni elimina datos automáticamente.

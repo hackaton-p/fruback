@@ -1,7 +1,7 @@
 import type { DomainRecord } from '../../../shared/domain/domain-record';
 export interface Plant extends DomainRecord {
   name: string;
-  boxesPerWorkerHour: string;
+  cratesPerWorkerHour: string;
   maxWorkers: number;
   shiftHours: string;
   maxOvertimeHours: string;

@@ -1,8 +1,8 @@
 import type { PlantParameters } from '../../../plants/domain/plant-parameters';
 
 export class PlanCalculatorService {
-  calculateDay(targetBoxes: number, parameters: PlantParameters) {
-    const productivity = Number(parameters.boxesPerWorkerHour);
+  calculateDay(targetCrates: number, parameters: PlantParameters) {
+    const productivity = Number(parameters.cratesPerWorkerHour);
     const efficiency = Number(parameters.efficiencyFactor);
     const workday = Number(parameters.shiftHours);
     const extra = Number(parameters.maxOvertimeHours);
@@ -10,7 +10,7 @@ export class PlanCalculatorService {
     const maximum = parameters.maxWorkers;
     if (
       ![
-        targetBoxes,
+        targetCrates,
         productivity,
         efficiency,
         workday,
@@ -18,7 +18,7 @@ export class PlanCalculatorService {
         tolerance,
         maximum,
       ].every(Number.isFinite) ||
-      targetBoxes < 0 ||
+      targetCrates < 0 ||
       productivity <= 0 ||
       efficiency < 0.1 ||
       efficiency > 1 ||
@@ -33,26 +33,28 @@ export class PlanCalculatorService {
       throw new Error('Parámetros de planificación inválidos');
 
     const workers = Math.min(
-      Math.ceil(targetBoxes / (productivity * efficiency * workday)),
+      Math.ceil(targetCrates / (productivity * efficiency * workday)),
       maximum,
     );
     const hours =
-      targetBoxes === 0
+      targetCrates === 0
         ? 0
-        : targetBoxes / (workers * productivity * efficiency);
+        : targetCrates / (workers * productivity * efficiency);
     // With no target, the relative margin is undefined; avoid NaN/Infinity in JSON.
     const margin =
-      targetBoxes === 0
+      targetCrates === 0
         ? null
         : (workers * productivity * efficiency * (workday + extra)) /
-            targetBoxes -
+            targetCrates -
           1;
     const dayStatus =
       hours > workday + extra
         ? 'RIESGO_TURNO_EXTRA'
         : hours > workday
           ? 'HORAS_EXTRA'
-          : 'DENTRO_JORNADA';
+          : margin !== null && margin < tolerance / 100
+            ? 'MARGEN_BAJO'
+            : 'DENTRO_JORNADA';
     return {
       workers,
       hours,

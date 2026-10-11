@@ -1,7 +1,10 @@
+import { ProgressType } from '../../../modules/workdays/domain/enums';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsInt,
+  IsDefined,
+  NotEquals,
   Min,
   Max,
   IsNumber,
@@ -87,7 +90,7 @@ export class PlantParametersDto {
   @IsNumber({ maxDecimalPlaces: 4 })
   @Min(0.0001)
   @Max(1000000000.0)
-  boxesPerWorkerHour!: number;
+  cratesPerWorkerHour!: number;
   @ApiProperty({})
   @Type(() => Number)
   @IsInt()
@@ -199,10 +202,6 @@ export class ProjectionImportDto {
   @ApiProperty({ enum: ProjectionType })
   @IsEnum(ProjectionType)
   type!: ProjectionType;
-  @ApiProperty({ required: false, enum: ['BOXES', 'TONNES'], default: 'BOXES' })
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsEnum({ BOXES: 'BOXES', TONNES: 'TONNES' })
-  unit?: 'BOXES' | 'TONNES';
 }
 
 export class ProjectionQuery extends WeekQuery {
@@ -240,11 +239,11 @@ export class CreatePlanDto {
   @ApiProperty({ enum: HarvestScenario })
   @IsEnum(HarvestScenario)
   harvestScenario!: HarvestScenario;
-  @ApiProperty({ required: false, type: () => ParameterOverridesDto })
-  @ValidateIf((_object, value) => value !== undefined)
+  @ApiProperty({ type: () => PlantParametersDto })
+  @IsDefined()
   @ValidateNested()
-  @Type(() => ParameterOverridesDto)
-  overrides?: ParameterOverridesDto;
+  @Type(() => PlantParametersDto)
+  parameters!: PlantParametersDto;
 }
 
 export class PlanQuery extends PlantFilterQuery {
@@ -307,7 +306,13 @@ export class AttendanceDto {
   @IsInt()
   @Min(0)
   @Max(100000)
-  workers!: number;
+  arrivedWorkers!: number;
+  @ApiProperty()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100000)
+  startingWorkers!: number;
 }
 
 export class OpenWorkdayDto {
@@ -332,29 +337,67 @@ export class OpenWorkdayDto {
 }
 
 export class ProgressDto {
+  @ApiProperty({ enum: ProgressType })
+  @IsEnum(ProgressType)
+  type!: ProgressType;
   @ApiProperty({ format: 'date-time' })
   @IsISO8601({ strict: true })
   @Matches(/(Z|[+-]\d{2}:\d{2})$/)
   recordedAt!: string;
-  @ApiProperty({})
+  @ApiProperty({ required: false, description: 'Required for AVANCE' })
+  @ValidateIf((o: ProgressDto) => o.type === ProgressType.PROGRESS)
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 4 })
   @Min(0)
-  @Max(1000000000.0)
-  cumulativeReceivedBoxes!: number;
-  @ApiProperty({})
+  @Max(1000000000)
+  cumulativeReceivedCrates?: number;
+  @ApiProperty({ required: false, description: 'Required for AVANCE' })
+  @ValidateIf((o: ProgressDto) => o.type === ProgressType.PROGRESS)
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 4 })
   @Min(0)
-  @Max(1000000000.0)
-  cumulativeProcessedBoxes!: number;
-  @ApiProperty({ type: [AttendanceDto] })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(20)
-  @ValidateNested({ each: true })
-  @Type(() => AttendanceDto)
-  attendance!: AttendanceDto[];
+  @Max(1000000000)
+  cumulativeProcessedCrates?: number;
+  @ApiProperty({ required: false, description: 'Required for PERSONAL' })
+  @ValidateIf((o: ProgressDto) => o.type === ProgressType.STAFF)
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(2147483647)
+  areaId?: number;
+  @ApiProperty({
+    required: false,
+    description: 'Nonzero signed change; PERSONAL only',
+  })
+  @ValidateIf((o: ProgressDto) => o.type === ProgressType.STAFF)
+  @Type(() => Number)
+  @IsInt()
+  @Min(-100000)
+  @Max(100000)
+  @NotEquals(0)
+  staffChange?: number;
+  @ApiProperty({ required: false, description: 'Required for VOLUMEN' })
+  @ValidateIf((o: ProgressDto) => o.type === ProgressType.VOLUME)
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 4 })
+  @Min(0)
+  @Max(1000000000)
+  expectedDailyCrates?: number;
+}
+
+export class EstimateWorkdayQuery {
+  @ApiProperty()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(2147483647)
+  planDayId!: number;
+  @ApiProperty()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(2000000)
+  workers!: number;
 }
 
 export class CloseWorkdayDto {
@@ -364,24 +407,25 @@ export class CloseWorkdayDto {
   @Min(0)
   @Max(72)
   workedHours!: number;
+  @ApiProperty({ required: false })
+  @ValidateIf((_object, value) => value !== undefined)
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 4 })
+  @Min(0)
+  @Max(1000000000.0)
+  receivedCrates?: number;
   @ApiProperty({})
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 4 })
   @Min(0)
   @Max(1000000000.0)
-  receivedBoxes!: number;
+  processedCrates!: number;
   @ApiProperty({})
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 4 })
   @Min(0)
   @Max(1000000000.0)
-  processedBoxes!: number;
-  @ApiProperty({})
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 4 })
-  @Min(0)
-  @Max(1000000000.0)
-  discardedBoxes!: number;
+  discardedCrates!: number;
   @ApiProperty({})
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 4 })

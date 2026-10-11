@@ -20,10 +20,7 @@ import {
 } from '../../../auth/presentation/http/auth.decorators';
 import type { Actor } from '../../../auth/domain/actor';
 import { RoleName } from '../../../auth/domain/enums';
-import {
-  ApiProtected,
-  ApiPage,
-} from '../../../../shared/presentation/http/api.decorators';
+import { ApiProtected } from '../../../../shared/presentation/http/api.decorators';
 import { PlansService } from '../../application/plans.service';
 import { PlanStatus } from '../../domain/enums';
 import {
@@ -33,6 +30,7 @@ import {
 } from '../../../../shared/presentation/http/request.dto';
 import {
   PlanDetailsResponse,
+  PlanListResponse,
   SimulationResponse,
 } from '../../../../shared/presentation/http/response.dto';
 @ApiTags('Plans')
@@ -60,7 +58,7 @@ export class PlansController {
   }
   @Get()
   @ApiOperation({ summary: 'List plans, days and calculated totals' })
-  @ApiPage(PlanDetailsResponse)
+  @ApiOkResponse({ type: PlanListResponse })
   list(@Query() query: PlanQuery, @CurrentActor() actor: Actor) {
     return this.service.list(query, actor);
   }

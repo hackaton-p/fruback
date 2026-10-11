@@ -1,6 +1,6 @@
 /** Decimal values remain strings at the persistence boundary to preserve PostgreSQL precision. */
 export interface PlantParameters {
-  boxesPerWorkerHour: string;
+  cratesPerWorkerHour: string;
   maxWorkers: number;
   shiftHours: string;
   maxOvertimeHours: string;

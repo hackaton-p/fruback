@@ -1,6 +1,6 @@
 import { PlanCalculatorService } from './plan-calculator.service';
 const parameters = {
-  boxesPerWorkerHour: '5',
+  cratesPerWorkerHour: '5.9',
   maxWorkers: 300,
   shiftHours: '10',
   maxOvertimeHours: '2',
@@ -11,15 +11,15 @@ const parameters = {
 describe('PlanCalculatorService', () => {
   const service = new PlanCalculatorService();
   it('calcula el ejemplo de Piura', () => {
-    const result = service.calculateDay(11180, parameters);
-    expect(result.workers).toBe(280);
-    expect(result.hours).toBeCloseTo(9.9821, 4);
+    const result = service.calculateDay(13000, parameters);
+    expect(result.workers).toBe(276);
+    expect(result.hours).toBeCloseTo(9.9791, 4);
     expect(result.dayStatus).toBe('DENTRO_JORNADA');
   });
   it('limita trabajadores y extiende horas para +20%', () => {
-    const result = service.calculateDay(11180 * 1.2, parameters);
+    const result = service.calculateDay(13000 * 1.2, parameters);
     expect(result.workers).toBe(300);
-    expect(result.hours).toBeCloseTo(11.18);
+    expect(result.hours).toBeCloseTo(11.0169);
     expect(result.dayStatus).toBe('HORAS_EXTRA');
   });
   it('conserva el riesgo de turno extra aunque el margen sea bajo', () => {

@@ -15,7 +15,7 @@ export class PlantEntity extends BaseEntity {
     precision: 14,
     scale: 4,
   })
-  boxesPerWorkerHour!: string;
+  cratesPerWorkerHour!: string;
   @Column({ name: 'personalMaximo', type: 'integer' }) maxWorkers!: number;
   @Column({ name: 'horasJornada', type: 'numeric', precision: 14, scale: 4 })
   shiftHours!: string;

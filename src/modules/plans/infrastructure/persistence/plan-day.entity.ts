@@ -6,7 +6,7 @@ import { PlanEntity } from './plan.entity';
 @Entity('plan_dia')
 @Check(
   'ck_plan_dia_0',
-  `"cajasMeta" >= 0 AND "trabajadores" >= 0 AND "horas" >= 0`,
+  `"jabasMeta" >= 0 AND "trabajadores" >= 0 AND "horas" >= 0`,
 )
 @Check(
   'ck_plan_dia_1',
@@ -19,8 +19,8 @@ export class PlanDayEntity extends BaseEntity {
   @JoinColumn({ name: 'planId' })
   plan!: Relation<PlanEntity>;
   @Column({ name: 'fecha', type: 'date' }) date!: string;
-  @Column({ name: 'cajasMeta', type: 'numeric', precision: 14, scale: 4 })
-  targetBoxes!: string;
+  @Column({ name: 'jabasMeta', type: 'numeric', precision: 14, scale: 4 })
+  targetCrates!: string;
   @Column({ name: 'trabajadores', type: 'integer' }) workers!: number;
   @Column({ name: 'horas', type: 'numeric', precision: 14, scale: 4 })
   hours!: string;

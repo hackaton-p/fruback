@@ -13,7 +13,6 @@ export interface ImportProjection {
   year: number;
   week: number;
   type: ProjectionType;
-  unit?: 'BOXES' | 'TONNES';
 }
 @Injectable()
 export class ProjectionsService {
@@ -100,9 +99,7 @@ export class ProjectionsService {
             ...filter,
             date: row.date ?? null,
             customerId,
-            boxes: decimal(
-              row.quantity * (input.unit === 'TONNES' ? 1000 / 8.2 : 1),
-            ),
+            crates: decimal(row.quantity),
           }),
         );
       }

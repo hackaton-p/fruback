@@ -28,6 +28,7 @@ import {
 import { WorkdaysService } from '../../application/workdays.service';
 import {
   OpenWorkdayDto,
+  EstimateWorkdayQuery,
   ProgressDto,
   CloseWorkdayDto,
   WorkdayQuery,
@@ -36,6 +37,7 @@ import {
 } from '../../../../shared/presentation/http/request.dto';
 import {
   WorkdayResponse,
+  WorkdayEstimateResponse,
   WorkdayDetailsResponse,
   WorkdayListResponse,
   ProgressResultResponse,
@@ -52,6 +54,14 @@ export class WorkdaysController {
   @ApiPage(WorkdayListResponse)
   list(@Query() query: WorkdayQuery, @CurrentActor() actor: Actor) {
     return this.service.list(query, actor);
+  }
+  @Get('workdays/estimate')
+  @ApiOperation({
+    summary: 'Estimate opening hours and end time without saving',
+  })
+  @ApiOkResponse({ type: WorkdayEstimateResponse })
+  estimate(@Query() query: EstimateWorkdayQuery, @CurrentActor() actor: Actor) {
+    return this.service.estimate(query, actor);
   }
   @Get('workdays/:id')
   @ApiOperation({
@@ -72,9 +82,13 @@ export class WorkdaysController {
   open(@Body() body: OpenWorkdayDto, @CurrentActor() actor: Actor) {
     return this.service.open(body, actor);
   }
-  @Post('workdays/:id/progress')
+  @Post('workdays/:id/records')
   @Roles(RoleName.SHIFT_MANAGER)
-  @ApiOperation({ summary: 'Record cumulative progress and generate alerts' })
+  @ApiOperation({
+    summary: 'Record AVANCE, PERSONAL or VOLUMEN and snapshot estimated hours',
+    description:
+      'Send only the fields for the selected type. Events can share a timestamp and are ordered by id. AVANCE uses cumulative crates; PERSONAL applies a signed change to one area; VOLUMEN replaces expected daily crates.',
+  })
   @ApiCreatedResponse({ type: ProgressResultResponse })
   progress(
     @Param('id', ParseIntPipe) id: number,
