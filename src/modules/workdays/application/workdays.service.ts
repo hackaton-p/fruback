@@ -177,10 +177,11 @@ export class WorkdaysService {
         localDate === day.date,
         'Start time must belong to the planned date in America/Lima',
       );
-      ensure(
-        startedAt.getTime() <= Date.now(),
-        'Start time cannot be in the future',
-      );
+      // DEMO: se permite iniciar días futuros del plan. Restaurar en producción.
+      // ensure(
+      //   startedAt.getTime() <= Date.now(),
+      //   'Start time cannot be in the future',
+      // );
       const presentWorkers = await this.attendance(
         store,
         day.id,
@@ -256,11 +257,12 @@ export class WorkdaysService {
         { orderBy: 'id' },
       );
       const recordedAt = new Date(input.recordedAt);
+      // DEMO: se permiten registros con hora futura. Restaurar en producción
+      // `&& recordedAt.getTime() <= Date.now()` y el mensaje "or be in the future".
       ensure(
         recordedAt.getTime() >=
-          (records.at(-1)?.recordedAt ?? workday.startedAt).getTime() &&
-          recordedAt.getTime() <= Date.now(),
-        'Record time cannot precede the previous record or be in the future',
+          (records.at(-1)?.recordedAt ?? workday.startedAt).getTime(),
+        'Record time cannot precede the previous record',
       );
       const fields = {
         [ProgressType.PROGRESS]: [
