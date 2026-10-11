@@ -7,10 +7,12 @@ export interface Actor {
   email: string;
   role: RoleName;
   plantId: number | null;
+  plantIds?: number[];
 }
 export function assertPlantAccess(actor: Actor, plantId: number) {
   ensure(
     actor.plantId === plantId ||
+      actor.plantIds?.includes(plantId) ||
       ((actor.role === RoleName.ADMIN ||
         actor.role === RoleName.DEPUTY_MANAGER) &&
         actor.plantId === null),

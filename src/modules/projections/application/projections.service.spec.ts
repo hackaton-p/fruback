@@ -56,6 +56,30 @@ describe('Projection registration', () => {
     expect(result.imported).toBe(2);
     expect(result.items.map((row) => Number(row.crates))).toEqual([0, 103]);
   });
+  it('saves harvest form rows with their date and crate precision', async () => {
+    const result = await service.create(
+      input,
+      [{ date: '2026-10-12', quantity: 100 }],
+      actor,
+    );
+    expect(result.imported).toBe(1);
+    expect(store.save).toHaveBeenCalledWith(
+      'projections',
+      expect.objectContaining({ date: '2026-10-12', crates: '100.0000' }),
+    );
+  });
+  it('saves commercial rows and trims customer details', async () => {
+    const result = await service.create(
+      { ...input, type: ProjectionType.COMMERCIAL },
+      [{ customerName: ' Customer ', country: ' Peru ', quantity: 50 }],
+      actor,
+    );
+    expect(result.imported).toBe(1);
+    expect(store.save).toHaveBeenCalledWith('customers', {
+      name: 'Customer',
+      country: 'Peru',
+    });
+  });
   it('rejects fractional harvest before writing any records', async () => {
     await expect(
       service.create(input, [{ date: '2026-10-12', quantity: 1.5 }], actor),
@@ -92,6 +116,44 @@ describe('Projection registration', () => {
         actor,
       ),
     ).rejects.toThrow('Duplicate dates');
+    expect(store.transaction).not.toHaveBeenCalled();
+  });
+  it('rejects overwriting registered projections', async () => {
+    store.find.mockResolvedValue([{ id: 1 }]);
+    await expect(
+      service.create(input, [{ date: '2026-10-12', quantity: 1 }], actor),
+    ).rejects.toThrow('already exists');
+    expect(store.save).not.toHaveBeenCalled();
+  });
+  it('rejects another plant', async () => {
+    await expect(
+      service.create(
+        { ...input, plantId: 2 },
+        [{ date: '2026-10-12', quantity: 1 }],
+        actor,
+      ),
+    ).rejects.toThrow('Plant access denied');
+    expect(store.transaction).not.toHaveBeenCalled();
+  });
+  it('rejects invalid quantities and calendar dates before writing', async () => {
+    await expect(
+      service.create(input, [{ date: '2026-10-12', quantity: -1 }], actor),
+    ).rejects.toThrow('Invalid projection quantity');
+    for (const date of ['2026-99-99', '2026-02-30']) {
+      await expect(
+        service.create(input, [{ date, quantity: 1 }], actor),
+      ).rejects.toThrow('Invalid calendar date');
+    }
+    expect(store.transaction).not.toHaveBeenCalled();
+  });
+  it('rejects missing commercial customer details before writing', async () => {
+    await expect(
+      service.create(
+        { ...input, type: ProjectionType.COMMERCIAL },
+        [{ quantity: 1 }],
+        actor,
+      ),
+    ).rejects.toThrow('Invalid projection customer');
     expect(store.transaction).not.toHaveBeenCalled();
   });
 });

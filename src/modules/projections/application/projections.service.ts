@@ -39,7 +39,6 @@ export class ProjectionsService {
   }
   async import(input: ImportProjection, file: Buffer, actor: Actor) {
     assertPlantAccess(actor, input.plantId);
-    weekDates(input.year, input.week);
     const rows = await this.reader.read(file, input.type);
     return this.create(input, rows, actor);
   }
@@ -63,7 +62,10 @@ export class ProjectionsService {
           'Harvest quantities must be whole crates',
         );
         ensure(
-          typeof row.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row.date),
+          typeof row.date === 'string' &&
+            /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
+            Number.isFinite(Date.parse(row.date)) &&
+            new Date(row.date).toISOString().slice(0, 10) === row.date,
           'Invalid calendar date',
         );
         const actual = isoWeek(row.date);
@@ -73,9 +75,10 @@ export class ProjectionsService {
         );
       } else {
         ensure(
-          row.customerName?.trim().length &&
+          typeof row.customerName === 'string' &&
+            row.customerName.trim().length > 0 &&
             row.customerName.length <= 255 &&
-            row.country &&
+            typeof row.country === 'string' &&
             row.country.trim().length >= 2 &&
             row.country.length <= 100,
           'Invalid projection customer',

@@ -25,9 +25,9 @@ import type { Actor } from '../../../auth/domain/actor';
 import { RoleName } from '../../../auth/domain/enums';
 import { ApiProtected } from '../../../../shared/presentation/http/api.decorators';
 import { ProjectionsService } from '../../application/projections.service';
+import { CreateProjectionDto } from './create-projection.dto';
 import {
   ProjectionImportDto,
-  CreateProjectionDto,
   ProjectionQuery,
 } from '../../../../shared/presentation/http/request.dto';
 import {
@@ -41,7 +41,9 @@ export class ProjectionsController {
   constructor(private readonly service: ProjectionsService) {}
   @Post()
   @Roles(RoleName.PLANNER)
-  @ApiOperation({ summary: 'Register weekly projections from a form' })
+  @ApiOperation({
+    summary: 'Create an immutable weekly projection from form rows',
+  })
   @ApiCreatedResponse({ type: ImportResponse })
   create(@Body() body: CreateProjectionDto, @CurrentActor() actor: Actor) {
     return this.service.create(body, body.rows, actor);
