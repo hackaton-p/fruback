@@ -1,3 +1,4 @@
+import { PersistenceModule } from './shared/infrastructure/persistence/persistence.module';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -12,6 +13,7 @@ import { AlertsModule } from './modules/alerts/alerts.module';
 @Module({
   imports: [
     DatabaseModule,
+    PersistenceModule,
     AuthModule,
     PlantsModule,
     CatalogsModule,

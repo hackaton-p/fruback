@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PlantEntity } from './infrastructure/persistence/plant.entity';
-@Module({ imports: [TypeOrmModule.forFeature([PlantEntity])] })
+import { PlantsService } from './application/plants.service';
+import { PlantsController } from './presentation/http/plants.controller';
+@Module({ providers: [PlantsService], controllers: [PlantsController] })
 export class PlantsModule {}

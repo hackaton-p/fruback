@@ -1,0 +1,11 @@
+import type { DomainRecord } from '../../../shared/domain/domain-record';
+import type { HourAdjustmentReason } from './enums';
+export interface PlanDay extends DomainRecord {
+  planId: number;
+  date: string;
+  targetBoxes: string;
+  workers: number;
+  hours: string;
+  adjustedHours: string | null;
+  adjustmentReason: HourAdjustmentReason | null;
+}

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AlertEntity } from './infrastructure/persistence/alert.entity';
-@Module({ imports: [TypeOrmModule.forFeature([AlertEntity])] })
+import { AlertsService } from './application/alerts.service';
+import { AlertsController } from './presentation/http/alerts.controller';
+@Module({ providers: [AlertsService], controllers: [AlertsController] })
 export class AlertsModule {}

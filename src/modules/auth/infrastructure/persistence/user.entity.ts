@@ -18,6 +18,8 @@ export class UserEntity extends BaseEntity {
   plant!: Relation<PlantEntity> | null;
   @Column({ name: 'nombre', type: 'varchar', length: 255 }) name!: string;
   @Column({ type: 'varchar', length: 255, unique: true }) email!: string;
-  @Column({ type: 'varchar', length: 255, select: false })
-  passwordHash!: string;
+  @Column({ type: 'varchar', length: 255, select: false, nullable: true })
+  passwordHash!: string | null;
+  @Column({ type: 'text', unique: true, nullable: true }) authUserId!:
+    string | null;
 }

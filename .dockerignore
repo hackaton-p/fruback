@@ -11,3 +11,8 @@ test
 **/*.spec.ts
 contexto-plan-packing.md
 README.md
+.agents
+.cursor
+docs
+skills-lock.json
+scalar.config.json

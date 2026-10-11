@@ -42,6 +42,10 @@ services:
     environment:
       <<: *database_environment
       PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-http://localhost:3001}
     ports:
       - '127.0.0.1:${PORT:-3000}:3000'
     depends_on:

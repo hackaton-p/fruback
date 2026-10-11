@@ -1,0 +1,5385 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "operationId": "UsersController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Get the authenticated packing profile",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/users": {
+      "post": {
+        "description": "No public registration. Only a global deputy manager can provision users without a plant. Password: 12–72 characters and at most 72 UTF-8 bytes.",
+        "operationId": "UsersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Provision an email/password user and assign a role and plant",
+        "tags": [
+          "Users"
+        ]
+      },
+      "get": {
+        "operationId": "UsersController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "limit"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ActorResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "List users in accessible plants",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/plants": {
+      "get": {
+        "operationId": "PlantsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlantResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "List accessible plants",
+        "tags": [
+          "Plants"
+        ]
+      }
+    },
+    "/api/plants/{id}": {
+      "get": {
+        "operationId": "PlantsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Get plant configuration",
+        "tags": [
+          "Plants"
+        ]
+      },
+      "patch": {
+        "operationId": "PlantsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParameterOverridesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Update defaults for future plans",
+        "tags": [
+          "Plants"
+        ]
+      }
+    },
+    "/api/fruits": {
+      "get": {
+        "operationId": "CatalogsController_fruits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FruitResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "List fruits",
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/areas": {
+      "get": {
+        "operationId": "CatalogsController_areas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AreaResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "List staffing areas",
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "operationId": "CatalogsController_customers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "limit"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CustomerResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "List customers",
+        "tags": [
+          "Catalogs"
+        ]
+      },
+      "post": {
+        "operationId": "CatalogsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Create a customer",
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "operationId": "CatalogsController_customer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Get a customer",
+        "tags": [
+          "Catalogs"
+        ]
+      },
+      "patch": {
+        "operationId": "CatalogsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Update a customer",
+        "tags": [
+          "Catalogs"
+        ]
+      },
+      "delete": {
+        "operationId": "CatalogsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Delete an unused customer",
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/projections": {
+      "get": {
+        "operationId": "ProjectionsController_list",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "week",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "fruitId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "COSECHA",
+                "COMERCIAL"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectionResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Read immutable weekly projections",
+        "tags": [
+          "Projections"
+        ]
+      }
+    },
+    "/api/projections/import": {
+      "post": {
+        "description": "One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. Quantities are BOXES (8.2 kg) or TONNES. Entire import is atomic; repeated imports return 409.",
+        "operationId": "ProjectionsController_import",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "plantId",
+                  "fruitId",
+                  "year",
+                  "week",
+                  "type"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "plantId": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "fruitId": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "year": {
+                    "type": "integer",
+                    "example": 2026
+                  },
+                  "week": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 53
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "COSECHA",
+                      "COMERCIAL"
+                    ]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "BOXES",
+                      "TONNES"
+                    ],
+                    "default": "BOXES"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Import one XLSX projection per plant, fruit, ISO week and type",
+        "tags": [
+          "Projections"
+        ]
+      }
+    },
+    "/api/plans/simulate": {
+      "post": {
+        "operationId": "PlansController_simulate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Calculate a simulation without persisting it",
+        "tags": [
+          "Plans"
+        ]
+      }
+    },
+    "/api/plans": {
+      "post": {
+        "operationId": "PlansController_apply",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Apply the official draft with daily staffing and parameter snapshot",
+        "tags": [
+          "Plans"
+        ]
+      },
+      "get": {
+        "operationId": "PlansController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "fruitId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BORRADOR",
+                "PENDIENTE",
+                "APROBADO",
+                "RECHAZADO",
+                "EN_EJECUCION",
+                "CERRADO"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "limit"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PlanDetailsResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "List plans, days and calculated totals",
+        "tags": [
+          "Plans"
+        ]
+      }
+    },
+    "/api/plans/{id}": {
+      "get": {
+        "operationId": "PlansController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Get plan detail and execution progress",
+        "tags": [
+          "Plans"
+        ]
+      }
+    },
+    "/api/plans/{id}/submit": {
+      "post": {
+        "operationId": "PlansController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Submit a draft for approval",
+        "tags": [
+          "Plans"
+        ]
+      }
+    },
+    "/api/plans/{id}/approve": {
+      "post": {
+        "operationId": "PlansController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Approve a pending plan",
+        "tags": [
+          "Plans"
+        ]
+      }
+    },
+    "/api/plans/{id}/reject": {
+      "post": {
+        "operationId": "PlansController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Reject a pending plan with a required comment",
+        "tags": [
+          "Plans"
+        ]
+      }
+    },
+    "/api/workdays": {
+      "get": {
+        "operationId": "WorkdaysController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "limit"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WorkdayListResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "List workdays by plant, date or plan",
+        "tags": [
+          "Execution"
+        ]
+      },
+      "post": {
+        "description": "Attendance must include all planned areas. startedAt must be on the planned date in America/Lima and not in the future.",
+        "operationId": "WorkdaysController_open",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenWorkdayDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkdayResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Open one workday for an approved plan day",
+        "tags": [
+          "Execution"
+        ]
+      }
+    },
+    "/api/workdays/{id}": {
+      "get": {
+        "operationId": "WorkdaysController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkdayDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Get attendance, progress, alerts and estimated hours",
+        "tags": [
+          "Execution"
+        ]
+      }
+    },
+    "/api/workdays/{id}/progress": {
+      "post": {
+        "operationId": "WorkdaysController_progress",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Record cumulative progress and generate alerts",
+        "tags": [
+          "Execution"
+        ]
+      }
+    },
+    "/api/workdays/{id}/close": {
+      "post": {
+        "operationId": "WorkdaysController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseWorkdayDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkdayResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Close a workday and close its plan when all days are closed",
+        "tags": [
+          "Execution"
+        ]
+      }
+    },
+    "/api/plan-days/{id}/hours": {
+      "patch": {
+        "operationId": "WorkdaysController_adjust",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustHoursDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDayResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Adjust hours during execution without changing the target",
+        "tags": [
+          "Execution"
+        ]
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "description": "No line-position or occupancy metrics: these are excluded from the MVP model. Ratios return null when the denominator is zero.",
+        "operationId": "WorkdaysController_dashboard",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "week",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "fruitId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Get weekly KPIs and daily projected versus executed data",
+        "tags": [
+          "Execution",
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/alerts": {
+      "get": {
+        "description": "date filters the planned operating date, including progress after midnight.",
+        "operationId": "AlertsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "limit"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AlertResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "List generated alerts",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/api/auth/get-session": {
+      "get": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Get the current session",
+        "operationId": "getSession",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "session": {
+                      "$ref": "#/components/schemas/Session"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  },
+                  "required": [
+                    "session",
+                    "user"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Get the current session",
+        "operationId": "getSessionPost",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "session": {
+                      "$ref": "#/components/schemas/Session"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  },
+                  "required": [
+                    "session",
+                    "user"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/sign-out": {
+      "post": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Sign out the current user",
+        "operationId": "signOut",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "callbackURL": {
+                    "type": "string",
+                    "description": "The URL to redirect to after provider logout"
+                  },
+                  "disableRedirect": {
+                    "type": "boolean",
+                    "description": "Return the provider logout URL without redirecting"
+                  },
+                  "state": {
+                    "type": "string",
+                    "description": "State to pass to the provider logout endpoint"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "url": {
+                      "type": "string",
+                      "description": "Provider logout URL when RP-initiated logout is available"
+                    },
+                    "redirect": {
+                      "type": "boolean",
+                      "description": "Whether the client should redirect to the provider logout URL"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/sign-in/email": {
+      "post": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Sign in with email and password",
+        "operationId": "signInEmail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "description": "Email of the user"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Password of the user"
+                  },
+                  "callbackURL": {
+                    "type": "string",
+                    "description": "Callback URL to use as a redirect for email verification"
+                  },
+                  "rememberMe": {
+                    "type": "boolean",
+                    "description": "If this is false, the session will not be remembered. Default is `true`."
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success - Returns either session details or redirect URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Session response when idToken is provided",
+                  "properties": {
+                    "redirect": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "token": {
+                      "type": "string",
+                      "description": "Session token"
+                    },
+                    "url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "user": {
+                      "type": "object",
+                      "$ref": "#/components/schemas/User"
+                    }
+                  },
+                  "required": [
+                    "redirect",
+                    "token",
+                    "user"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Change the password of the user",
+        "operationId": "changePassword",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "newPassword": {
+                    "type": "string",
+                    "description": "The new password to set"
+                  },
+                  "currentPassword": {
+                    "type": "string",
+                    "description": "The current password is required"
+                  },
+                  "revokeOtherSessions": {
+                    "type": "boolean",
+                    "description": "Must be a boolean value"
+                  }
+                },
+                "required": [
+                  "newPassword",
+                  "currentPassword"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password successfully changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "New session token if other sessions were revoked"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "The unique identifier of the user"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "description": "The email address of the user"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "The name of the user"
+                        },
+                        "image": {
+                          "type": "string",
+                          "format": "uri",
+                          "nullable": true,
+                          "description": "The profile image URL of the user"
+                        },
+                        "emailVerified": {
+                          "type": "boolean",
+                          "description": "Whether the email has been verified"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "When the user was created"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "When the user was last updated"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "name",
+                        "emailVerified",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "user"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/list-sessions": {
+      "get": {
+        "tags": [
+          "Default"
+        ],
+        "description": "List all active sessions for the user",
+        "operationId": "listUserSessions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Session"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/revoke-session": {
+      "post": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Revoke a single session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "The token to revoke"
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "description": "Indicates if the session was revoked successfully"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/revoke-sessions": {
+      "post": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Revoke all sessions for the user",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "description": "Indicates if all sessions were revoked successfully"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/revoke-other-sessions": {
+      "post": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Revoke all other sessions for the user except the current one",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "description": "Indicates if all other sessions were revoked successfully"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/ok": {
+      "get": {
+        "tags": [
+          "Default"
+        ],
+        "description": "Check if the API is working",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "API is working",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "description": "Indicates if the API is working"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    }
+  },
+  "info": {
+    "title": "Pura Fruit Packing API",
+    "description": "Packing MVP. Sign in at /api/auth/sign-in/email; use its session token as a Bearer token or the HttpOnly session cookie. Cookie-authenticated writes require a trusted Origin. Enum wire values preserve the business specification. Decimal quantities are returned as strings.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "apiKeyCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "apiKeyCookie",
+        "description": "API Key authentication via cookie"
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Bearer token authentication"
+      },
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "better-auth.session_token"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean",
+            "default": false,
+            "readOnly": true
+          },
+          "image": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "emailVerified",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Session": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "readOnly": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "token": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ipAddress": {
+            "type": "string"
+          },
+          "userAgent": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "expiresAt",
+          "token",
+          "createdAt",
+          "updatedAt",
+          "userId"
+        ]
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "readOnly": true
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "idToken": {
+            "type": "string"
+          },
+          "accessTokenExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "refreshTokenExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "providerId",
+          "userId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Verification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "readOnly": true
+          },
+          "identifier": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "identifier",
+          "value",
+          "expiresAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "RateLimit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "readOnly": true
+          },
+          "key": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          },
+          "lastRequest": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "count",
+          "lastRequest"
+        ]
+      },
+      "ActorResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "authUserId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "PLANIFICADOR",
+              "SUBGERENTE",
+              "JEFE_TURNO"
+            ]
+          },
+          "plantId": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "authUserId",
+          "name",
+          "email",
+          "role",
+          "plantId"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "PLANIFICADOR",
+              "SUBGERENTE",
+              "JEFE_TURNO"
+            ]
+          },
+          "plantId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "password",
+          "role"
+        ]
+      },
+      "PlantResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "boxesPerWorkerHour": {
+            "type": "string"
+          },
+          "maxWorkers": {
+            "type": "number"
+          },
+          "shiftHours": {
+            "type": "string"
+          },
+          "maxOvertimeHours": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "efficiencyFactor": {
+            "type": "string"
+          },
+          "volumeTolerancePercent": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "name",
+          "boxesPerWorkerHour",
+          "maxWorkers",
+          "shiftHours",
+          "maxOvertimeHours",
+          "startTime",
+          "efficiencyFactor",
+          "volumeTolerancePercent"
+        ]
+      },
+      "ParameterOverridesDto": {
+        "type": "object",
+        "properties": {
+          "boxesPerWorkerHour": {
+            "type": "number"
+          },
+          "maxWorkers": {
+            "type": "number"
+          },
+          "shiftHours": {
+            "type": "number"
+          },
+          "maxOvertimeHours": {
+            "type": "number"
+          },
+          "startTime": {
+            "type": "string",
+            "example": "17:00"
+          },
+          "efficiencyFactor": {
+            "type": "number"
+          },
+          "volumeTolerancePercent": {
+            "type": "number"
+          }
+        }
+      },
+      "FruitResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "name"
+        ]
+      },
+      "AreaResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "proportion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "name",
+          "proportion"
+        ]
+      },
+      "CustomerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "name",
+          "country"
+        ]
+      },
+      "CustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "country"
+        ]
+      },
+      "UpdateCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        }
+      },
+      "ProjectionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "plantId": {
+            "type": "number"
+          },
+          "fruitId": {
+            "type": "number"
+          },
+          "customerId": {
+            "type": "object",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "COSECHA",
+              "COMERCIAL"
+            ]
+          },
+          "year": {
+            "type": "number"
+          },
+          "week": {
+            "type": "number"
+          },
+          "date": {
+            "type": "object",
+            "nullable": true
+          },
+          "boxes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "plantId",
+          "fruitId",
+          "customerId",
+          "type",
+          "year",
+          "week",
+          "date",
+          "boxes"
+        ]
+      },
+      "ImportResponse": {
+        "type": "object",
+        "properties": {
+          "imported": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectionResponse"
+            }
+          }
+        },
+        "required": [
+          "imported",
+          "items"
+        ]
+      },
+      "CreatePlanDto": {
+        "type": "object",
+        "properties": {
+          "plantId": {
+            "type": "number"
+          },
+          "fruitId": {
+            "type": "number"
+          },
+          "year": {
+            "type": "number"
+          },
+          "week": {
+            "type": "number"
+          },
+          "harvestScenario": {
+            "type": "string",
+            "enum": [
+              "PROYECTADA",
+              "+10",
+              "+20",
+              "-10"
+            ]
+          },
+          "overrides": {
+            "$ref": "#/components/schemas/ParameterOverridesDto"
+          }
+        },
+        "required": [
+          "plantId",
+          "fruitId",
+          "year",
+          "week",
+          "harvestScenario"
+        ]
+      },
+      "ParametersResponse": {
+        "type": "object",
+        "properties": {
+          "boxesPerWorkerHour": {
+            "type": "string"
+          },
+          "maxWorkers": {
+            "type": "number"
+          },
+          "shiftHours": {
+            "type": "string"
+          },
+          "maxOvertimeHours": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "efficiencyFactor": {
+            "type": "string"
+          },
+          "volumeTolerancePercent": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "boxesPerWorkerHour",
+          "maxWorkers",
+          "shiftHours",
+          "maxOvertimeHours",
+          "startTime",
+          "efficiencyFactor",
+          "volumeTolerancePercent"
+        ]
+      },
+      "SimulatedAreaResponse": {
+        "type": "object",
+        "properties": {
+          "areaId": {
+            "type": "number"
+          },
+          "plannedWorkers": {
+            "type": "number"
+          },
+          "presentWorkers": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "areaId",
+          "plannedWorkers",
+          "presentWorkers"
+        ]
+      },
+      "SimulatedDayResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "targetBoxes": {
+            "type": "string"
+          },
+          "workers": {
+            "type": "number"
+          },
+          "hours": {
+            "type": "string"
+          },
+          "margin": {
+            "type": "object",
+            "nullable": true
+          },
+          "hasLowMargin": {
+            "type": "boolean"
+          },
+          "dayStatus": {
+            "type": "string"
+          },
+          "areas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulatedAreaResponse"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "targetBoxes",
+          "workers",
+          "hours",
+          "margin",
+          "hasLowMargin",
+          "dayStatus",
+          "areas"
+        ]
+      },
+      "PlanTotalsResponse": {
+        "type": "object",
+        "properties": {
+          "targetBoxes": {
+            "type": "string"
+          },
+          "commercialBoxes": {
+            "type": "string"
+          },
+          "commercialGapBoxes": {
+            "type": "string"
+          },
+          "commercialGapPercent": {
+            "type": "number"
+          },
+          "commercialCoverage": {
+            "type": "object",
+            "nullable": true
+          },
+          "peakWorkers": {
+            "type": "number"
+          },
+          "averageWorkers": {
+            "type": "number"
+          },
+          "operatingHours": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "targetBoxes",
+          "commercialBoxes",
+          "commercialGapBoxes",
+          "commercialGapPercent",
+          "commercialCoverage",
+          "peakWorkers",
+          "averageWorkers",
+          "operatingHours"
+        ]
+      },
+      "SimulationResponse": {
+        "type": "object",
+        "properties": {
+          "parametersSnapshot": {
+            "$ref": "#/components/schemas/ParametersResponse"
+          },
+          "hasParameterOverrides": {
+            "type": "boolean"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulatedDayResponse"
+            }
+          },
+          "totals": {
+            "$ref": "#/components/schemas/PlanTotalsResponse"
+          }
+        },
+        "required": [
+          "parametersSnapshot",
+          "hasParameterOverrides",
+          "days",
+          "totals"
+        ]
+      },
+      "PlanDayAreaResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "planDayId": {
+            "type": "number"
+          },
+          "areaId": {
+            "type": "number"
+          },
+          "plannedWorkers": {
+            "type": "number"
+          },
+          "presentWorkers": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "planDayId",
+          "areaId",
+          "plannedWorkers",
+          "presentWorkers"
+        ]
+      },
+      "WorkdayResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "planDayId": {
+            "type": "number"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "closedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "presentWorkers": {
+            "type": "number"
+          },
+          "receivedBoxes": {
+            "type": "string"
+          },
+          "workedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "processedBoxes": {
+            "type": "string"
+          },
+          "discardedBoxes": {
+            "type": "object",
+            "nullable": true
+          },
+          "looseKg": {
+            "type": "object",
+            "nullable": true
+          },
+          "fixedKg": {
+            "type": "object",
+            "nullable": true
+          },
+          "targetMet": {
+            "type": "object",
+            "nullable": true
+          },
+          "difference": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "planDayId",
+          "startedAt",
+          "closedAt",
+          "presentWorkers",
+          "receivedBoxes",
+          "workedHours",
+          "processedBoxes",
+          "discardedBoxes",
+          "looseKg",
+          "fixedKg",
+          "targetMet",
+          "difference"
+        ]
+      },
+      "AlertResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "planDayId": {
+            "type": "number"
+          },
+          "progressRecordId": {
+            "type": "object",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "PLANIFICACION",
+              "VOLUMEN_ENTRANTE",
+              "PERSONAL_INSUFICIENTE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "planDayId",
+          "progressRecordId",
+          "type",
+          "message",
+          "date"
+        ]
+      },
+      "PlanDayDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "planId": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          },
+          "targetBoxes": {
+            "type": "string"
+          },
+          "workers": {
+            "type": "number"
+          },
+          "hours": {
+            "type": "string"
+          },
+          "adjustedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "adjustmentReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "CAMBIO_VOLUMEN",
+              "PERSONAL_PRESENTE"
+            ]
+          },
+          "areas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanDayAreaResponse"
+            }
+          },
+          "workday": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkdayResponse"
+              }
+            ]
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            }
+          },
+          "margin": {
+            "type": "object",
+            "nullable": true
+          },
+          "hasLowMargin": {
+            "type": "boolean"
+          },
+          "dayStatus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "planId",
+          "date",
+          "targetBoxes",
+          "workers",
+          "hours",
+          "adjustedHours",
+          "adjustmentReason",
+          "areas",
+          "workday",
+          "alerts",
+          "margin",
+          "hasLowMargin",
+          "dayStatus"
+        ]
+      },
+      "PlanDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "plantId": {
+            "type": "number"
+          },
+          "fruitId": {
+            "type": "number"
+          },
+          "year": {
+            "type": "number"
+          },
+          "week": {
+            "type": "number"
+          },
+          "harvestScenario": {
+            "type": "string",
+            "enum": [
+              "PROYECTADA",
+              "+10",
+              "+20",
+              "-10"
+            ]
+          },
+          "parametersSnapshot": {
+            "$ref": "#/components/schemas/ParametersResponse"
+          },
+          "hasParameterOverrides": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "BORRADOR",
+              "PENDIENTE",
+              "APROBADO",
+              "RECHAZADO",
+              "EN_EJECUCION",
+              "CERRADO"
+            ]
+          },
+          "createdById": {
+            "type": "number"
+          },
+          "submittedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "approvedById": {
+            "type": "object",
+            "nullable": true
+          },
+          "approvedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "approvalComment": {
+            "type": "object",
+            "nullable": true
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanDayDetailsResponse"
+            }
+          },
+          "totals": {
+            "$ref": "#/components/schemas/PlanTotalsResponse"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "plantId",
+          "fruitId",
+          "year",
+          "week",
+          "harvestScenario",
+          "parametersSnapshot",
+          "hasParameterOverrides",
+          "status",
+          "createdById",
+          "submittedAt",
+          "approvedById",
+          "approvedAt",
+          "approvalComment",
+          "days",
+          "totals"
+        ]
+      },
+      "RejectPlanDto": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "comment"
+        ]
+      },
+      "WorkdayListResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "planDayId": {
+            "type": "number"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "closedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "presentWorkers": {
+            "type": "number"
+          },
+          "receivedBoxes": {
+            "type": "string"
+          },
+          "workedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "processedBoxes": {
+            "type": "string"
+          },
+          "discardedBoxes": {
+            "type": "object",
+            "nullable": true
+          },
+          "looseKg": {
+            "type": "object",
+            "nullable": true
+          },
+          "fixedKg": {
+            "type": "object",
+            "nullable": true
+          },
+          "targetMet": {
+            "type": "object",
+            "nullable": true
+          },
+          "difference": {
+            "type": "object",
+            "nullable": true
+          },
+          "planId": {
+            "type": "number"
+          },
+          "plantId": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "planDayId",
+          "startedAt",
+          "closedAt",
+          "presentWorkers",
+          "receivedBoxes",
+          "workedHours",
+          "processedBoxes",
+          "discardedBoxes",
+          "looseKg",
+          "fixedKg",
+          "targetMet",
+          "difference",
+          "planId",
+          "plantId",
+          "date"
+        ]
+      },
+      "PlanDayResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "planId": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          },
+          "targetBoxes": {
+            "type": "string"
+          },
+          "workers": {
+            "type": "number"
+          },
+          "hours": {
+            "type": "string"
+          },
+          "adjustedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "adjustmentReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "CAMBIO_VOLUMEN",
+              "PERSONAL_PRESENTE"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "planId",
+          "date",
+          "targetBoxes",
+          "workers",
+          "hours",
+          "adjustedHours",
+          "adjustmentReason"
+        ]
+      },
+      "ProgressRecordResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "workdayId": {
+            "type": "number"
+          },
+          "recordedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cumulativeReceivedBoxes": {
+            "type": "string"
+          },
+          "cumulativeProcessedBoxes": {
+            "type": "string"
+          },
+          "presentWorkers": {
+            "type": "number"
+          },
+          "recordedById": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "workdayId",
+          "recordedAt",
+          "cumulativeReceivedBoxes",
+          "cumulativeProcessedBoxes",
+          "presentWorkers",
+          "recordedById"
+        ]
+      },
+      "ExecutionMetricsResponse": {
+        "type": "object",
+        "properties": {
+          "expectedReceived": {
+            "type": "number"
+          },
+          "deviationPercent": {
+            "type": "object",
+            "nullable": true
+          },
+          "volumeAlert": {
+            "type": "boolean"
+          },
+          "estimatedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "requiresAdjustment": {
+            "type": "boolean"
+          },
+          "riskOfExtraShift": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "expectedReceived",
+          "deviationPercent",
+          "volumeAlert",
+          "estimatedHours",
+          "requiresAdjustment",
+          "riskOfExtraShift"
+        ]
+      },
+      "WorkdayDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "planDayId": {
+            "type": "number"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "closedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "presentWorkers": {
+            "type": "number"
+          },
+          "receivedBoxes": {
+            "type": "string"
+          },
+          "workedHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "processedBoxes": {
+            "type": "string"
+          },
+          "discardedBoxes": {
+            "type": "object",
+            "nullable": true
+          },
+          "looseKg": {
+            "type": "object",
+            "nullable": true
+          },
+          "fixedKg": {
+            "type": "object",
+            "nullable": true
+          },
+          "targetMet": {
+            "type": "object",
+            "nullable": true
+          },
+          "difference": {
+            "type": "object",
+            "nullable": true
+          },
+          "planDay": {
+            "$ref": "#/components/schemas/PlanDayResponse"
+          },
+          "attendance": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanDayAreaResponse"
+            }
+          },
+          "progress": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgressRecordResponse"
+            }
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            }
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/ExecutionMetricsResponse"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "planDayId",
+          "startedAt",
+          "closedAt",
+          "presentWorkers",
+          "receivedBoxes",
+          "workedHours",
+          "processedBoxes",
+          "discardedBoxes",
+          "looseKg",
+          "fixedKg",
+          "targetMet",
+          "difference",
+          "planDay",
+          "attendance",
+          "progress",
+          "alerts",
+          "metrics"
+        ]
+      },
+      "AttendanceDto": {
+        "type": "object",
+        "properties": {
+          "areaId": {
+            "type": "number"
+          },
+          "workers": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "areaId",
+          "workers"
+        ]
+      },
+      "OpenWorkdayDto": {
+        "type": "object",
+        "properties": {
+          "planDayId": {
+            "type": "number"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attendance": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttendanceDto"
+            }
+          }
+        },
+        "required": [
+          "planDayId",
+          "attendance"
+        ]
+      },
+      "ProgressDto": {
+        "type": "object",
+        "properties": {
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cumulativeReceivedBoxes": {
+            "type": "number"
+          },
+          "cumulativeProcessedBoxes": {
+            "type": "number"
+          },
+          "attendance": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttendanceDto"
+            }
+          }
+        },
+        "required": [
+          "recordedAt",
+          "cumulativeReceivedBoxes",
+          "cumulativeProcessedBoxes",
+          "attendance"
+        ]
+      },
+      "ProgressResultResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "workdayId": {
+            "type": "number"
+          },
+          "recordedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cumulativeReceivedBoxes": {
+            "type": "string"
+          },
+          "cumulativeProcessedBoxes": {
+            "type": "string"
+          },
+          "presentWorkers": {
+            "type": "number"
+          },
+          "recordedById": {
+            "type": "number"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/ExecutionMetricsResponse"
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "workdayId",
+          "recordedAt",
+          "cumulativeReceivedBoxes",
+          "cumulativeProcessedBoxes",
+          "presentWorkers",
+          "recordedById",
+          "metrics",
+          "alerts"
+        ]
+      },
+      "CloseWorkdayDto": {
+        "type": "object",
+        "properties": {
+          "workedHours": {
+            "type": "number"
+          },
+          "receivedBoxes": {
+            "type": "number"
+          },
+          "processedBoxes": {
+            "type": "number"
+          },
+          "discardedBoxes": {
+            "type": "number"
+          },
+          "looseKg": {
+            "type": "number"
+          },
+          "fixedKg": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "workedHours",
+          "receivedBoxes",
+          "processedBoxes",
+          "discardedBoxes",
+          "looseKg",
+          "fixedKg"
+        ]
+      },
+      "AdjustHoursDto": {
+        "type": "object",
+        "properties": {
+          "adjustedHours": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "CAMBIO_VOLUMEN",
+              "PERSONAL_PRESENTE"
+            ]
+          }
+        },
+        "required": [
+          "adjustedHours",
+          "reason"
+        ]
+      },
+      "DashboardAreaResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "planDayId": {
+            "type": "number"
+          },
+          "areaId": {
+            "type": "number"
+          },
+          "plannedWorkers": {
+            "type": "number"
+          },
+          "presentWorkers": {
+            "type": "object",
+            "nullable": true
+          },
+          "absenteeism": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "planDayId",
+          "areaId",
+          "plannedWorkers",
+          "presentWorkers",
+          "absenteeism"
+        ]
+      },
+      "DailyMetricsResponse": {
+        "type": "object",
+        "properties": {
+          "fulfillment": {
+            "type": "object",
+            "nullable": true
+          },
+          "absenteeism": {
+            "type": "object",
+            "nullable": true
+          },
+          "productivity": {
+            "type": "object",
+            "nullable": true
+          },
+          "discardRate": {
+            "type": "object",
+            "nullable": true
+          },
+          "looseRate": {
+            "type": "object",
+            "nullable": true
+          },
+          "fixedRate": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "fulfillment",
+          "absenteeism",
+          "productivity",
+          "discardRate",
+          "looseRate",
+          "fixedRate"
+        ]
+      },
+      "DashboardDayResponse": {
+        "type": "object",
+        "properties": {
+          "planId": {
+            "type": "number"
+          },
+          "plantId": {
+            "type": "number"
+          },
+          "fruitId": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          },
+          "targetBoxes": {
+            "type": "string"
+          },
+          "plannedWorkers": {
+            "type": "number"
+          },
+          "plannedHours": {
+            "type": "string"
+          },
+          "workday": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkdayResponse"
+              }
+            ]
+          },
+          "areas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardAreaResponse"
+            }
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/DailyMetricsResponse"
+          }
+        },
+        "required": [
+          "planId",
+          "plantId",
+          "fruitId",
+          "date",
+          "targetBoxes",
+          "plannedWorkers",
+          "plannedHours",
+          "workday",
+          "areas",
+          "metrics"
+        ]
+      },
+      "DashboardKpisResponse": {
+        "type": "object",
+        "properties": {
+          "targetBoxes": {
+            "type": "string"
+          },
+          "processedBoxes": {
+            "type": "string"
+          },
+          "fulfillment": {
+            "type": "object",
+            "nullable": true
+          },
+          "averageHours": {
+            "type": "object",
+            "nullable": true
+          },
+          "staffingRatio": {
+            "type": "object",
+            "nullable": true
+          },
+          "productivity": {
+            "type": "object",
+            "nullable": true
+          },
+          "discardRate": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "targetBoxes",
+          "processedBoxes",
+          "fulfillment",
+          "averageHours",
+          "staffingRatio",
+          "productivity",
+          "discardRate"
+        ]
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number"
+          },
+          "week": {
+            "type": "number"
+          },
+          "plantId": {
+            "type": "object",
+            "nullable": true
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardDayResponse"
+            }
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/DashboardKpisResponse"
+          }
+        },
+        "required": [
+          "year",
+          "week",
+          "plantId",
+          "days",
+          "kpis"
+        ]
+      }
+    }
+  }
+}

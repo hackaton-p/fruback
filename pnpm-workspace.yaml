@@ -1,4 +1,5 @@
 allowBuilds:
   '@nestjs/core': false
   '@parcel/watcher': false
+  '@scarf/scarf': false
   unrs-resolver: false
