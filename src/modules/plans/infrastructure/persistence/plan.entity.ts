@@ -19,19 +19,19 @@ import { UserEntity } from '../../../auth/infrastructure/persistence/user.entity
   `"estado" <> 'RECHAZADO' OR ("comentarioAprobacion" IS NOT NULL AND length(trim("comentarioAprobacion")) > 0)`,
 )
 @Index('idx_plan_0', ['plantId', 'year', 'week', 'status'])
-@Index('idx_plan_1', ['plantId', 'fruitId', 'year', 'week'], {
+@Index('idx_plan_1', ['plantId', 'year', 'week'], {
   unique: true,
-  where: `"estado" IN ('APROBADO', 'EN_EJECUCION', 'CERRADO')`,
+  where: `"frutaId" IS NULL AND "estado" IN ('APROBADO', 'EN_EJECUCION', 'CERRADO')`,
 })
 export class PlanEntity extends BaseEntity {
   @Column({ name: 'plantaId', type: 'integer' }) plantId!: number;
   @ManyToOne(() => PlantEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'plantaId' })
   plant!: Relation<PlantEntity>;
-  @Column({ name: 'frutaId', type: 'integer' }) fruitId!: number;
-  @ManyToOne(() => FruitEntity, { nullable: false, onDelete: 'RESTRICT' })
+  @Column({ name: 'frutaId', type: 'integer', nullable: true }) fruitId!: number | null;
+  @ManyToOne(() => FruitEntity, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'frutaId' })
-  fruit!: Relation<FruitEntity>;
+  fruit!: Relation<FruitEntity> | null;
   @Column({ name: 'anio', type: 'integer' }) year!: number;
   @Column({ name: 'semana', type: 'integer' }) week!: number;
   @Column({ name: 'escenarioCosecha', type: 'varchar', length: 255 })

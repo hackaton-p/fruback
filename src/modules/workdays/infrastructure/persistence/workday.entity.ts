@@ -21,6 +21,8 @@ import { PlanDayEntity } from '../../../plans/infrastructure/persistence/plan-da
   `"fechaCierre" IS NULL OR ("fechaCierre" >= "fechaInicio" AND "horasTrabajadas" IS NOT NULL AND "jabasDescarte" IS NOT NULL AND "kgLoose" IS NOT NULL AND "kgFijo" IS NOT NULL AND "metaCumplida" IS NOT NULL AND "diferencia" IS NOT NULL)`,
 )
 export class WorkdayEntity extends BaseEntity {
+  @Column({ name: 'jabasProcesadasPorFruta', type: 'jsonb', default: () => "'[]'::jsonb" })
+  processedByFruit!: { fruitId: number; fruitName?: string; crates: string }[];
   @Column({
     name: 'horasEstimadasInicio',
     type: 'numeric',

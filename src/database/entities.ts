@@ -2,6 +2,7 @@ import { PlantEntity } from '../modules/plants/infrastructure/persistence/plant.
 import { RoleEntity } from '../modules/auth/infrastructure/persistence/role.entity';
 import { UserEntity } from '../modules/auth/infrastructure/persistence/user.entity';
 import { FruitEntity } from '../modules/catalogs/infrastructure/persistence/fruit.entity';
+import { PlantFruitEntity } from '../modules/catalogs/infrastructure/persistence/plant-fruit.entity';
 import { CustomerEntity } from '../modules/catalogs/infrastructure/persistence/customer.entity';
 import { AreaEntity } from '../modules/catalogs/infrastructure/persistence/area.entity';
 import { ProjectionEntity } from '../modules/projections/infrastructure/persistence/projection.entity';
@@ -16,6 +17,7 @@ export const entities = [
   RoleEntity,
   UserEntity,
   FruitEntity,
+  PlantFruitEntity,
   CustomerEntity,
   AreaEntity,
   ProjectionEntity,

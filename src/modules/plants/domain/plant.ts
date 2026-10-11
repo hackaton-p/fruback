@@ -9,4 +9,5 @@ export interface Plant extends DomainRecord {
   efficiencyFactor: string;
   volumeTolerancePercent: string;
   configurationCompletedAt: Date | null;
+  isActive: boolean;
 }

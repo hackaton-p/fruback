@@ -2,6 +2,14 @@
 
 Resumen del estado actual del diseño (10/10/2026). Refleja el artefacto **Plan de Packing · Pantallas** (antes "Flujos Plan de Packing") en Claude Design: https://claude.ai/artifact/AZVy84DGpaZidzHRiivV7q
 
+### Acuerdo funcional vigente
+
+- “Cajas” y “jabas” son sinónimos para el usuario; el sistema guarda y presenta jabas sin conversiones.
+- El pedido semanal se registra por cliente y fruta. Cosecha y demanda se cargan por fruta.
+- Existe un solo plan por planta y semana. El total planificado sigue el pedido; las metas diarias se asignan por fruta según la cosecha disponible, hasta cubrir lo pedido. Si falta cosecha, se muestra la brecha.
+- Cada día del plan conserva su meta por fruta. En la jornada el avance acumulado y el cierre se registran por fruta y también se validan contra el total.
+- Las brechas por cliente siguen fuera del MVP; la ejecución por fruta no atribuye producción a un cliente específico.
+
 - Stack objetivo: **Next.js** (frontend) + **NestJS** (backend).
 - Empresa: Pura Fruit. Plantas: **Piura (Santa María)** y **Sullana**.
 - Frutas: uva y arándano. Las variedades se agregarán después.
@@ -15,7 +23,7 @@ Cosecha proyecta cuánta fruta llega y comercial proyecta cuánto vende, pero ho
 El sistema:
 
 1. Recibe la **proyección de cosecha**, por semana y por día.
-2. Recibe el **programa comercial** de la semana, por cliente.
+2. Recibe el **pedido comercial** de la semana, por cliente y fruta.
 3. Calcula un **plan semanal por planta**: meta diaria, trabajadores y horas.
 4. Lo pasa por **aprobación** del subgerente.
 5. Durante cada jornada registra **avances**, compara el volumen entrante contra el plan, lanza **alertas** y ajusta **horas**.
@@ -27,8 +35,8 @@ El sistema:
 
 | Tema | Regla |
 |---|---|
-| Unidad | Solo **jabas**, en cosecha, comercial, plan y jornada. No existen cajas ni conversiones. |
-| Alcance del plan | Un plan por **planta** y por semana. Sin líneas en el MVP. |
+| Unidad | **Jabas** en cosecha, comercial, plan y jornada. “Caja” es un sinónimo del usuario; no hay conversión. |
+| Alcance del plan | Un plan por **planta** y semana, con metas por fruta. Sin líneas en el MVP. |
 | Turnos | **Un solo turno**. Un turno extra es lo que se quiere evitar. |
 | Personal | Se cuenta **todo el personal** (packing, almacén, trazabilidad, mantenimiento, saneamiento). No se usan posiciones de línea ni la relación directo-indirecto. |
 | Trabajadores | **Los calcula el sistema**; el planificador no los ingresa. |
@@ -129,7 +137,7 @@ Solo interesan las vistas; los diagramas de flujo se eliminaron. Todas usan un m
 
 ### Planificador · Plan semanal (semana 42, Piura)
 
-1. Ve la proyección de cosecha (jabas por día) y el programa comercial por cliente, en jabas. Ambas se cargan por Excel y son de solo lectura. Si la cosecha no cubre el programa, aparece la alerta de planificación (en el ejemplo faltan 2,400 jabas, el 3.8%).
+1. Ve la proyección de cosecha por fruta y día, y el pedido comercial por cliente y fruta, en jabas. Ambas se cargan por Excel y son de solo lectura. Si la cosecha no cubre el pedido, aparece la alerta de planificación con la brecha en jabas y en %.
 2. **Paso 1 · Simulación** (borrador, no se guarda):
    - Panel **"Parámetros del plan · Planta Piura"**: arranca con los valores por defecto de la configuración y el planificador puede cambiarlos. Los valores que difieren del default se marcan.
    - Escenarios de cosecha: proyectada, +10%, +20% y −10%.
@@ -154,8 +162,8 @@ Solo interesan las vistas; los diagramas de flujo se eliminaron. Todas usan un m
 Tres fases en la misma pantalla:
 
 1. **Iniciar jornada:** por área registra cuántos llegaron y con cuántos inicia. Muestra en vivo las horas estimadas contra las del plan (276 trabajadores, 13,000 jabas, ≈10 h).
-2. **Durante la jornada:** estado, KPIs (trabajadores ahora, horas estimadas, jabas procesadas, volumen del día), formulario de registros (avance de volumen, cambio de personal, cambio de volumen del día) y la lista "Registros de hoy" con el estimado después de cada uno. Si las horas no alcanzan, alerta y opción de **ajustar horas** con motivo.
-3. **Cierre:** horas trabajadas, jabas procesadas, jabas de descarte, kg loose y kg fijo; resultado con meta cumplida y diferencia.
+2. **Durante la jornada:** estado, KPIs (trabajadores ahora, horas estimadas, jabas procesadas, volumen del día), avance acumulado desglosado por fruta, cambio de personal, cambio de volumen del día y la lista "Registros de hoy". Si las horas no alcanzan, alerta y opción de **ajustar horas** con motivo.
+3. **Cierre:** horas trabajadas, jabas procesadas por fruta y en total, jabas de descarte, kg loose y kg fijo; resultado con meta cumplida y diferencia.
 
 ### Dashboard de packing
 
@@ -249,7 +257,7 @@ erDiagram
     PROYECCION {
         int id PK
         int plantaId FK
-        int frutaId FK
+        int frutaId FK "null en plan consolidado; presente en planes históricos"
         int clienteId FK "null en COSECHA"
         string tipo "COSECHA, COMERCIAL"
         int semana
@@ -285,6 +293,7 @@ erDiagram
         int planId FK
         date fecha
         decimal jabasMeta
+        json jabasMetaPorFruta "frutaId, fruta y jabas del día"
         int trabajadores "calculado"
         decimal horas "calculado, plan aprobado"
         decimal horasActualizadas "ajuste por volumen o personal"
@@ -300,6 +309,7 @@ erDiagram
         decimal jabasRecibidas
         decimal horasTrabajadas
         decimal jabasProcesadas
+        json jabasProcesadasPorFruta "acumulado por fruta"
         decimal jabasDescarte "para % descarte"
         decimal kgLoose "para % peso loose"
         decimal kgFijo "para % peso fijo"
@@ -313,6 +323,7 @@ erDiagram
         string tipo "AVANCE, PERSONAL, VOLUMEN"
         decimal jabasRecibidasAcum "AVANCE"
         decimal jabasProcesadasAcum "AVANCE"
+        json jabasProcesadasPorFruta "AVANCE"
         int areaId FK "PERSONAL"
         int cambioPersonal "PERSONAL, + llegan / - salen"
         decimal jabasEsperadasDia "VOLUMEN"
@@ -341,11 +352,11 @@ erDiagram
 | AREA | nombre (Packing, Almacén, Trazabilidad, Mantenimiento, Saneamiento), proporción |
 | CLIENTE | nombre, país |
 | PROYECCION | plantaId, frutaId, clienteId (solo en COMERCIAL), tipo (COSECHA o COMERCIAL), semana, fecha (por día en cosecha), jabas |
-| PLAN | plantaId, frutaId, semana, escenarioCosecha, parametrosUsados (valores finales), parametrosModificados (sí/no), estado, creadoPor, fechaEnvio, aprobadoPor, fechaAprobacion, comentarioAprobacion |
-| PLAN_DIA | planId, fecha, jabasMeta, trabajadores (calculado), horas (calculado), horasActualizadas, motivoAjuste |
+| PLAN | plantaId, semana, escenarioCosecha, parametrosUsados (valores finales), parametrosModificados (sí/no), estado, creadoPor, fechaEnvio, aprobadoPor, fechaAprobacion, comentarioAprobacion |
+| PLAN_DIA | planId, fecha, jabasMeta, jabasMetaPorFruta, trabajadores (calculado), horas (calculado), horasActualizadas, motivoAjuste |
 | PLAN_DIA_AREA | planDiaId, areaId, trabajadoresPlan, trabajadoresPresentes |
-| JORNADA | planDiaId, trabajadoresPresentes, jabasRecibidas, horasTrabajadas, jabasProcesadas, jabasDescarte, kgLoose, kgFijo, metaCumplida, diferencia |
-| REGISTRO_AVANCE | jornadaId, hora, jabasRecibidasAcum, jabasProcesadasAcum, trabajadoresPresentes, registradoPor |
+| JORNADA | planDiaId, trabajadoresPresentes, jabasRecibidas, horasTrabajadas, jabasProcesadas, jabasProcesadasPorFruta, jabasDescarte, kgLoose, kgFijo, metaCumplida, diferencia |
+| REGISTRO_AVANCE | jornadaId, hora, jabasRecibidasAcum, jabasProcesadasAcum, jabasProcesadasPorFruta, trabajadoresPresentes, registradoPor |
 | ALERTA | planDiaId, registroAvanceId (null si es de planificación), tipo (PLANIFICACION, VOLUMEN_ENTRANTE o PERSONAL_INSUFICIENTE), mensaje, fecha |
 
 **Estados de PLAN**: BORRADOR (oficial, sin enviar), luego PENDIENTE (enviado a aprobación). Desde ahí pasa a APROBADO, luego EN_EJECUCION y finalmente CERRADO; o a RECHAZADO, que vuelve al planificador.
@@ -401,8 +412,8 @@ Convenciones generales:
 
 #### FRUTA
 - **Qué es:** el catálogo de frutas (Uva, Arándano). Las variedades irán más adelante.
-- **Back:** se crea por seed.
-- **Front:** selector de fruta al cargar proyecciones y al crear un plan.
+- **Back:** se crea por seed y se asocia a plantas mediante `planta_fruta`; el seed actual asocia Uva y Arándano a Piura y Sullana. `GET /fruits?plantId={id}` devuelve solo las frutas habilitadas para esa planta, y las proyecciones rechazan frutas no asociadas.
+- **Front:** selector de fruta por planta al cargar proyecciones y pedidos comerciales.
 
 #### CLIENTE
 - **Qué es:** los clientes del programa comercial (FGA, Summit Produce, etc.).
@@ -426,7 +437,7 @@ Convenciones generales:
 - **Front:** columnas por área en el plan oficial, en el detalle del plan del subgerente y en la tabla de personal del jefe de turno.
 
 #### PROYECCION
-- **Qué es:** lo que cosecha prevé que llega (por día) y lo que comercial prevé vender (por semana y cliente), siempre en jabas.
+- **Qué es:** lo que cosecha prevé que llega (por día y fruta) y lo que comercial prevé vender (por semana, cliente y fruta), siempre en jabas.
 - **Back:**
   - Si `tipo = COSECHA`: `fecha` es obligatoria y `clienteId` va null.
   - Si `tipo = COMERCIAL`: `clienteId` es obligatorio y `fecha` va null.
@@ -438,14 +449,15 @@ Convenciones generales:
   - Si la cosecha de la semana es menor que el total comercial, muestra la **alerta de planificación** con la brecha en jabas y en %.
 
 #### PLAN
-- **Qué es:** el plan semanal oficial de una planta y una fruta. La simulación **no** es un PLAN: vive solo en el front hasta que se aplica.
+- **Qué es:** el plan semanal oficial de una planta para el pedido total de la semana, con metas diarias por fruta. La simulación **no** es un PLAN: vive solo en el front hasta que se aplica.
 - **Back:**
-  - `POST /planes` (aplicar): recibe `plantaId`, `frutaId`, `semana`, `escenarioCosecha` y los **valores finales** de los parámetros (los defaults de la planta, cambiados o no por el planificador).
+  - `POST /planes` (aplicar): recibe `plantaId`, `semana`, `escenarioCosecha` y los **valores finales** de los parámetros (los defaults de la planta, cambiados o no por el planificador).
   - El back hace todo el cálculo:
     1. Guarda esos valores en `parametrosUsados`; son los que valen para el plan.
     2. Marca `parametrosModificados` si alguno difiere del default de PLANTA (solo informativo).
-    3. Crea los PLAN_DIA y sus PLAN_DIA_AREA.
-    4. Si ya existe un plan BORRADOR para esa planta, fruta y semana, lo reemplaza.
+    3. Asigna el pedido de cada fruta a los días según la cosecha disponible, hasta cubrir la demanda o agotar la cosecha.
+    4. Crea los PLAN_DIA con sus metas por fruta y PLAN_DIA_AREA.
+    5. Si ya existe un plan BORRADOR para esa planta y semana, lo reemplaza.
   - Si la cosecha no cubre el programa comercial, crea una ALERTA de tipo `PLANIFICACION`.
   - Transiciones de estado (cualquier otra devuelve 409):
 
@@ -458,7 +470,7 @@ Convenciones generales:
     | APROBADO | EN_EJECUCION | Sistema | Automático al abrirse la primera JORNADA de la semana |
     | EN_EJECUCION | CERRADO | Sistema | Automático al cerrar la última JORNADA |
 
-  - Solo puede haber un plan APROBADO o EN_EJECUCION por planta, fruta y semana.
+  - Solo puede haber un plan APROBADO o EN_EJECUCION por planta y semana.
   - `GET /planes?estado=&plantaId=`: lista con los totales calculados (meta, trabajadores pico y horas).
 - **Front:**
   - Planificador: panel "Parámetros del plan" que arranca con los defaults de PLANTA y se puede editar, paso 2 "Plan oficial" y botón "Enviar a aprobación".
@@ -522,8 +534,8 @@ Convenciones generales:
 - **Front:**
   - Pantalla **Jefe de turno**, en tres etapas:
     1. **Iniciar jornada:** llegaron e inician por área, horas estimadas y hora de fin aproximada, cuántos faltan para terminar en la jornada, y el botón "Iniciar jornada con N trabajadores".
-    2. **Durante la jornada:** estado (en plan, no se termina en las horas del plan, riesgo de turno extra), KPIs (trabajadores ahora, horas estimadas, jabas procesadas, volumen del día), registro de eventos y la lista "Registros de hoy" con el estimado después de cada uno.
-    3. **Cierre:** horas trabajadas, jabas procesadas, descarte, kg loose y kg fijo; resultado con meta cumplida y diferencia.
+    2. **Durante la jornada:** estado (en plan, no se termina en las horas del plan, riesgo de turno extra), KPIs (trabajadores ahora, horas estimadas, jabas procesadas, volumen del día), avance acumulado por fruta y la lista "Registros de hoy".
+    3. **Cierre:** horas trabajadas, jabas procesadas por fruta y en total, descarte, kg loose y kg fijo; resultado con meta cumplida y diferencia.
   - **Curso de la semana** y **Dashboard**, que muestran:
     - Ejecutado vs proyectado.
     - Horas.
@@ -533,7 +545,7 @@ Convenciones generales:
 
 #### REGISTRO_AVANCE
 - **Qué es:** cada cosa que el jefe de turno registra durante la jornada. Hay tres tipos:
-  - `AVANCE`: jabas recibidas y jabas procesadas, acumuladas.
+  - `AVANCE`: jabas recibidas y jabas procesadas, acumuladas en total y por fruta.
   - `PERSONAL`: llegan (+) o salen (−) personas de un área.
   - `VOLUMEN`: cosecha avisa que el total del día cambia (`jabasEsperadasDia`).
 - **Back:**
@@ -553,7 +565,7 @@ Convenciones generales:
     | `horasEstimadas` > horas del plan por menos presentes | `PERSONAL_INSUFICIENTE` | Propone horas actualizadas |
     | `horasEstimadas` > jornada + extra | La alerta que corresponda | Marca riesgo de turno extra |
 - **Front:**
-  - Formulario **Registrar en la jornada** con pestañas: Avance de volumen (hora, jabas recibidas, jabas procesadas), Cambio de personal (hora, cantidad, área) y Cambio de volumen del día (hora, jabas esperadas).
+  - Formulario **Registrar en la jornada** con pestañas: Avance de volumen (hora, jabas recibidas y procesadas por fruta y en total), Cambio de personal (hora, cantidad, área) y Cambio de volumen del día (hora, jabas esperadas).
   - Lista "Registros de hoy" con el estimado de horas después de cada registro y las alertas que generó.
   - Muestra la alerta y el botón "Ajustar horas" cuando aplica.
 

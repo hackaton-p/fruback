@@ -4,6 +4,7 @@ export interface PlanDay extends DomainRecord {
   planId: number;
   date: string;
   targetCrates: string;
+  fruitTargets: { fruitId: number; fruitName: string; crates: string }[];
   workers: number;
   hours: string;
   adjustedHours: string | null;

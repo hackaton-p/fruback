@@ -34,7 +34,9 @@ describe('Projection registration', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     store.get.mockResolvedValue({ id: 1 });
-    store.find.mockResolvedValue([]);
+    store.find.mockImplementation((table: string) =>
+      Promise.resolve(table === 'plantFruits' ? [{ plantId: 1, fruitId: 1 }] : []),
+    );
     store.save.mockImplementation(
       (_table: string, data: Record<string, unknown>) =>
         Promise.resolve({ id: 1, ...data }),

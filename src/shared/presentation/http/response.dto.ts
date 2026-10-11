@@ -23,6 +23,7 @@ export class PlantResponse {
   @ApiProperty({}) updatedAt!: Date;
   @ApiProperty({ nullable: true }) configurationCompletedAt!: Date | null;
   @ApiProperty({}) name!: string;
+  @ApiProperty({}) isActive!: boolean;
   @ApiProperty({}) cratesPerWorkerHour!: string;
   @ApiProperty({}) maxWorkers!: number;
   @ApiProperty({}) shiftHours!: string;
@@ -38,6 +39,8 @@ export class PlanDayResponse {
   @ApiProperty({}) planId!: number;
   @ApiProperty({}) date!: string;
   @ApiProperty({}) targetCrates!: string;
+  @ApiProperty({ type: 'array', items: { type: 'object' } })
+  fruitTargets!: { fruitId: number; fruitName: string; crates: string }[];
   @ApiProperty({}) workers!: number;
   @ApiProperty({}) hours!: string;
   @ApiProperty({ nullable: true }) adjustedHours!: string | null;
@@ -60,7 +63,7 @@ export class PlanResponse {
   @ApiProperty({}) createdAt!: Date;
   @ApiProperty({}) updatedAt!: Date;
   @ApiProperty({}) plantId!: number;
-  @ApiProperty({}) fruitId!: number;
+  @ApiProperty({ nullable: true }) fruitId!: number | null;
   @ApiProperty({}) year!: number;
   @ApiProperty({}) week!: number;
   @ApiProperty({ enum: HarvestScenario }) harvestScenario!: HarvestScenario;
@@ -122,8 +125,12 @@ export class FruitResponse {
   @ApiProperty({}) createdAt!: Date;
   @ApiProperty({}) updatedAt!: Date;
   @ApiProperty({}) name!: string;
+  @ApiProperty({}) isActive!: boolean;
+  @ApiProperty({ type: [Number] }) plantIds!: number[];
 }
 export class WorkdayResponse {
+  @ApiProperty({ type: 'array', items: { type: 'object' } })
+  processedByFruit!: { fruitId: number; crates: string }[];
   @ApiProperty({ nullable: true }) initialEstimatedHours!: string | null;
   @ApiProperty() expectedDailyCrates!: string;
   @ApiProperty({}) id!: number;
@@ -143,6 +150,8 @@ export class WorkdayResponse {
   @ApiProperty({ nullable: true }) difference!: string | null;
 }
 export class ProgressRecordResponse {
+  @ApiProperty({ nullable: true, type: 'array', items: { type: 'object' } })
+  processedByFruit!: { fruitId: number; crates: string }[] | null;
   @ApiProperty({ enum: ProgressType }) type!: ProgressType;
   @ApiProperty({ nullable: true }) areaId!: number | null;
   @ApiProperty({ nullable: true }) staffChange!: number | null;
@@ -288,7 +297,7 @@ export class DashboardDayResponse {
   @ApiProperty() maxOvertimeHours!: number;
   @ApiProperty({}) planId!: number;
   @ApiProperty({}) plantId!: number;
-  @ApiProperty({}) fruitId!: number;
+  @ApiProperty({ nullable: true }) fruitId!: number | null;
   @ApiProperty({}) date!: string;
   @ApiProperty({}) targetCrates!: string;
   @ApiProperty({}) plannedWorkers!: number;
@@ -363,7 +372,7 @@ export class PlanListResponse {
     type: 'object',
     additionalProperties: { type: 'integer' },
     description:
-      'Counts across all states, respecting plant, fruit and week filters, before pagination',
+      'Counts across all states, respecting plant and week filters, before pagination',
   })
   statusCounts!: Record<string, number>;
 }

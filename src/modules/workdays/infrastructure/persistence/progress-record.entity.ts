@@ -21,6 +21,8 @@ import { UserEntity } from '../../../auth/infrastructure/persistence/user.entity
 )
 @Index('idx_registro_avance_0', ['workdayId', 'recordedAt'])
 export class ProgressRecordEntity extends BaseEntity {
+  @Column({ name: 'jabasProcesadasPorFruta', type: 'jsonb', nullable: true })
+  processedByFruit!: { fruitId: number; fruitName?: string; crates: string }[] | null;
   @Column({ name: 'tipo', type: 'varchar', length: 20 }) type!: ProgressType;
   @Column({ type: 'integer', nullable: true }) areaId!: number | null;
   @ManyToOne(() => AreaEntity, { nullable: true, onDelete: 'RESTRICT' })

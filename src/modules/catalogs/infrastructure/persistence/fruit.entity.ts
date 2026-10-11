@@ -5,4 +5,6 @@ import { BaseEntity } from '../../../../shared/infrastructure/persistence/base.e
 export class FruitEntity extends BaseEntity {
   @Column({ name: 'nombre', type: 'varchar', length: 255, unique: true })
   name!: string;
+  @Column({ name: 'activo', type: 'boolean', default: true })
+  isActive!: boolean;
 }

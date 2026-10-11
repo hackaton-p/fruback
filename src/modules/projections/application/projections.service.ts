@@ -103,7 +103,18 @@ export class ProjectionsService {
         'Plant not found',
         404,
       );
-      ensure(await store.get('fruits', input.fruitId), 'Fruit not found', 404);
+      const plant = await store.get('plants', input.plantId);
+      ensure(plant && plant.isActive !== false, 'Plant not found or inactive', 404);
+      const fruit = await store.get('fruits', input.fruitId);
+      ensure(fruit && fruit.isActive !== false, 'Fruit not found or inactive', 404);
+      ensure(
+        (await store.find('plantFruits', {
+          plantId: input.plantId,
+          fruitId: input.fruitId,
+        })).length > 0,
+        'Fruit is not enabled for this plant',
+        409,
+      );
       const filter = {
         plantId: input.plantId,
         fruitId: input.fruitId,

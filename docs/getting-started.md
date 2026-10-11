@@ -50,7 +50,7 @@ Roles persistidos: `PLANIFICADOR`, `SUBGERENTE`, `JEFE_TURNO`. `plantIds` asigna
 | GET | `/api/plants` | Plantas accesibles por el usuario |
 | GET | `/api/plants/{id}` | Usuario de la planta o subgerente global |
 | PATCH | `/api/plants/{id}` | Subgerente con acceso a la planta |
-| GET | `/api/fruits` | Cualquier usuario autenticado |
+| GET | `/api/fruits?plantId={id}` | Cualquier usuario autenticado; filtra el catálogo por planta |
 | GET | `/api/areas` | Cualquier usuario autenticado |
 | GET | `/api/customers` | Cualquier usuario autenticado |
 | GET | `/api/customers/{id}` | Cualquier usuario autenticado |
