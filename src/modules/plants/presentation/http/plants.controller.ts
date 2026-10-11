@@ -35,7 +35,7 @@ export class PlantsController {
     return this.service.get(id, actor);
   }
   @Patch(':id')
-  @Roles(RoleName.DEPUTY_MANAGER)
+  @Roles(RoleName.ADMIN, RoleName.PLANNER, RoleName.DEPUTY_MANAGER, RoleName.SHIFT_MANAGER)
   @ApiOperation({ summary: 'Update defaults for future plans' })
   @ApiOkResponse({ type: PlantResponse })
   update(
