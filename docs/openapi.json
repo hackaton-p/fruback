@@ -3885,6 +3885,11 @@
             "format": "date-time",
             "type": "string"
           },
+          "configurationCompletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
           "name": {
             "type": "string"
           },
@@ -3914,6 +3919,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "configurationCompletedAt",
           "name",
           "cratesPerWorkerHour",
           "maxWorkers",

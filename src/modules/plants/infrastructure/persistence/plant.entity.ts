@@ -36,4 +36,10 @@ export class PlantEntity extends BaseEntity {
     scale: 4,
   })
   volumeTolerancePercent!: string;
+  @Column({
+    name: 'configurationCompletedAt',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  configurationCompletedAt!: Date | null;
 }

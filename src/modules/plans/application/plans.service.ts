@@ -41,6 +41,11 @@ export class PlansService {
     weekDates(input.year, input.week);
     const plant = await store.get('plants', input.plantId);
     ensure(plant, 'Plant not found', 404);
+    ensure(
+      plant.configurationCompletedAt,
+      'Confirm the plant configuration before planning',
+      409,
+    );
     ensure(await store.get('fruits', input.fruitId), 'Fruit not found', 404);
     const parametersSnapshot = resolveParameters(
       plantParameters(plant),

@@ -26,6 +26,7 @@ export class PlantsService {
       await store.save('plants', {
         id,
         ...resolveParameters(plantParameters(plant), input),
+        configurationCompletedAt: new Date(),
       });
       return store.get('plants', id);
     });

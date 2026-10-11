@@ -35,8 +35,8 @@ describe('Packing MVP HTTP integration', { concurrency: false }, () => {
   assert.ok(process.env.DB_NAME?.endsWith('_test'),'Use an isolated _test database');
   ({app}=await createApplication()); await app.init(); api=request(app.getHttpServer()); store=app.get(PackingStore);
   const parameters={cratesPerWorkerHour:'5.9',maxWorkers:300,shiftHours:'10',maxOvertimeHours:'2',startTime:'17:00',efficiencyFactor:'0.8',volumeTolerancePercent:'5'};
-  plantId=(await store.save('plants',{name:`HTTP plant ${suffix}`,...parameters})).id;
-  otherPlantId=(await store.save('plants',{name:`Other HTTP plant ${suffix}`,...parameters})).id;
+  plantId=(await store.save('plants',{name:`HTTP plant ${suffix}`,...parameters,configurationCompletedAt:new Date()})).id;
+  otherPlantId=(await store.save('plants',{name:`Other HTTP plant ${suffix}`,...parameters,configurationCompletedAt:new Date()})).id;
   fruitId=(await store.find('fruits'))[0].id;
   const auth=app.get(AuthService);
   await auth.createUser({name:'Manager',email:`manager-${suffix}@example.test`,password,role:RoleName.DEPUTY_MANAGER});
