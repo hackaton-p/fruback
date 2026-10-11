@@ -27,6 +27,7 @@ import { ApiProtected } from '../../../../shared/presentation/http/api.decorator
 import { ProjectionsService } from '../../application/projections.service';
 import {
   ProjectionImportDto,
+  CreateProjectionDto,
   ProjectionQuery,
 } from '../../../../shared/presentation/http/request.dto';
 import {
@@ -38,6 +39,13 @@ import {
 @Controller('projections')
 export class ProjectionsController {
   constructor(private readonly service: ProjectionsService) {}
+  @Post()
+  @Roles(RoleName.PLANNER)
+  @ApiOperation({ summary: 'Register weekly projections from a form' })
+  @ApiCreatedResponse({ type: ImportResponse })
+  create(@Body() body: CreateProjectionDto, @CurrentActor() actor: Actor) {
+    return this.service.create(body, body.rows, actor);
+  }
   @Get()
   @ApiOperation({ summary: 'Read immutable weekly projections' })
   @ApiOkResponse({ type: [ProjectionResponse] })

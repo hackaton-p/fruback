@@ -7,6 +7,8 @@ import {
   Query,
   ParseIntPipe,
   HttpCode,
+  Patch,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -38,6 +40,26 @@ import {
 @Controller('plans')
 export class PlansController {
   constructor(private readonly service: PlansService) {}
+  @Patch(':id')
+  @Roles(RoleName.PLANNER)
+  @ApiOperation({
+    summary: 'Update a draft or rejected plan without changing its period',
+  })
+  @ApiOkResponse({ type: PlanDetailsResponse })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: CreatePlanDto,
+    @CurrentActor() actor: Actor,
+  ) {
+    return this.service.apply(body, actor, id);
+  }
+  @Delete(':id')
+  @HttpCode(204)
+  @Roles(RoleName.PLANNER)
+  @ApiOperation({ summary: 'Discard an unsubmitted or rejected plan' })
+  discard(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+    return this.service.discard(id, actor);
+  }
   @Post('simulate')
   @HttpCode(200)
   @Roles(RoleName.PLANNER)

@@ -39,3 +39,20 @@ export function decimal(value: number): string {
 export function ratio(numerator: number, denominator: number): number | null {
   return denominator > 0 ? numerator / denominator : null;
 }
+
+export function nextPlanningMonday(now: Date): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Lima',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const value = (type: string) =>
+    Number(parts.find((part) => part.type === type)!.value);
+  const today = new Date(
+    Date.UTC(value('year'), value('month') - 1, value('day')),
+  );
+  return new Date(today.getTime() + (8 - (today.getUTCDay() || 7)) * 86400000)
+    .toISOString()
+    .slice(0, 10);
+}

@@ -204,6 +204,41 @@ export class ProjectionImportDto {
   type!: ProjectionType;
 }
 
+export class ProjectionRowDto {
+  @ApiProperty({ required: false, format: 'date' })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsISO8601({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  date?: string;
+  @ApiProperty({ required: false })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  customerName?: string;
+  @ApiProperty({ required: false })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  country?: string;
+  @ApiProperty({})
+  @IsNumber({ maxDecimalPlaces: 4 })
+  @Min(0)
+  @Max(1e9)
+  quantity!: number;
+}
+
+export class CreateProjectionDto extends ProjectionImportDto {
+  @ApiProperty({ type: [ProjectionRowDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => ProjectionRowDto)
+  rows!: ProjectionRowDto[];
+}
+
 export class ProjectionQuery extends WeekQuery {
   @ApiProperty({ required: false, enum: ProjectionType })
   @ValidateIf((_object, value) => value !== undefined)
@@ -212,6 +247,29 @@ export class ProjectionQuery extends WeekQuery {
 }
 
 export class CreatePlanDto {
+  @ApiProperty({ required: false, example: '2026-10-12' })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsISO8601({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  startDate?: string;
+  @ApiProperty({ required: false, default: 5 })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsInt()
+  @Min(1)
+  @Max(7)
+  dayCount?: number;
+  @ApiProperty({
+    required: false,
+    type: [String],
+    example: ['2026-10-12', '2026-10-14', '2026-10-17'],
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(7)
+  @IsISO8601({ strict: true }, { each: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { each: true })
+  selectedDates?: string[];
   @ApiProperty({})
   @Type(() => Number)
   @IsInt()
