@@ -3,6 +3,7 @@ import type { PackingStore } from '../../../shared/application/packing.store';
 import type { Actor } from '../../auth/domain/actor';
 import { RoleName } from '../../auth/domain/enums';
 import { ProjectionType } from '../domain/enums';
+import { PlanStatus } from '../../plans/domain/enums';
 
 describe('Projection registration', () => {
   const actor: Actor = {
@@ -24,6 +25,7 @@ describe('Projection registration', () => {
     get: jest.fn(),
     find: jest.fn(),
     save: jest.fn(),
+    remove: jest.fn(),
     transaction: jest.fn(),
   };
   const reader = { read: jest.fn() };
@@ -39,9 +41,9 @@ describe('Projection registration', () => {
     );
     store.transaction.mockImplementation(
       (callback: (transaction: PackingStore) => Promise<unknown>) =>
-        callback(store as unknown as PackingStore),
+        callback(store),
     );
-    service = new ProjectionsService(store as unknown as PackingStore, reader);
+    service = new ProjectionsService(store, reader);
   });
 
   it('registers integer harvest quantities, including zero', async () => {
@@ -118,11 +120,32 @@ describe('Projection registration', () => {
     ).rejects.toThrow('Duplicate dates');
     expect(store.transaction).not.toHaveBeenCalled();
   });
-  it('rejects overwriting registered projections', async () => {
-    store.find.mockResolvedValue([{ id: 1 }]);
+  it('replaces a registered projection while the week has only draft or rejected plans', async () => {
+    store.find.mockImplementation((table: string) =>
+      Promise.resolve(
+        table === 'projections' ? [{ id: 7 }] : [{ status: PlanStatus.DRAFT }],
+      ),
+    );
+    const result = await service.create(
+      input,
+      [{ date: '2026-10-12', quantity: 1 }],
+      actor,
+    );
+    expect(store.remove).toHaveBeenCalledWith('projections', { id: 7 });
+    expect(result.imported).toBe(1);
+  });
+  it('rejects replacing a projection once a plan was submitted', async () => {
+    store.find.mockImplementation((table: string) =>
+      Promise.resolve(
+        table === 'projections'
+          ? [{ id: 7 }]
+          : [{ status: PlanStatus.PENDING }],
+      ),
+    );
     await expect(
       service.create(input, [{ date: '2026-10-12', quantity: 1 }], actor),
-    ).rejects.toThrow('already exists');
+    ).rejects.toThrow('cannot be replaced');
+    expect(store.remove).not.toHaveBeenCalled();
     expect(store.save).not.toHaveBeenCalled();
   });
   it('rejects another plant', async () => {

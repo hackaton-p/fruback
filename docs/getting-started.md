@@ -64,7 +64,7 @@ Los parámetros de planta son `cratesPerWorkerHour`, `maxWorkers`, `shiftHours`,
 
 ## Proyecciones por Excel
 
-- `GET /api/projections?plantId=1&fruitId=1&year=2026&week=42&type=COSECHA` devuelve las filas inmutables. `year` y `week` son obligatorios.
+- `GET /api/projections?plantId=1&fruitId=1&year=2026&week=42&type=COSECHA` devuelve las filas de la proyección. Registrar de nuevo (POST) la reemplaza mientras ningún plan de esa semana esté enviado o aprobado. `year` y `week` son obligatorios.
 - `POST /api/projections/import`, solo planificador, recibe `multipart/form-data`: `file`, `plantId`, `fruitId`, `year`, `week`, `type`.
 - El XLSX debe tener exactamente una hoja, encabezados exactos, entre 1 y 500 filas de datos y un tamaño máximo de 2 MB. No se aceptan fórmulas en las celdas de entrada.
 

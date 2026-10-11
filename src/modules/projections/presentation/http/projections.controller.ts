@@ -42,14 +42,16 @@ export class ProjectionsController {
   @Post()
   @Roles(RoleName.PLANNER)
   @ApiOperation({
-    summary: 'Create an immutable weekly projection from form rows',
+    summary: 'Register or replace a weekly projection from form rows',
+    description:
+      'Replaces the existing projection while the week has no submitted or approved plan; otherwise returns 409.',
   })
   @ApiCreatedResponse({ type: ImportResponse })
   create(@Body() body: CreateProjectionDto, @CurrentActor() actor: Actor) {
     return this.service.create(body, body.rows, actor);
   }
   @Get()
-  @ApiOperation({ summary: 'Read immutable weekly projections' })
+  @ApiOperation({ summary: 'Read weekly projections' })
   @ApiOkResponse({ type: [ProjectionResponse] })
   list(@Query() query: ProjectionQuery, @CurrentActor() actor: Actor) {
     return this.service.list(query, actor);
@@ -64,7 +66,7 @@ export class ProjectionsController {
   @ApiOperation({
     summary: 'Import one XLSX projection per plant, fruit, ISO week and type',
     description:
-      'One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. All quantities are crates (jabas), without conversions. Entire import is atomic; repeated imports return 409.',
+      'One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. All quantities are crates (jabas), without conversions. Entire import is atomic; a repeated import replaces the projection unless the week has a submitted or approved plan (409).',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

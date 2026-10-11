@@ -4,6 +4,7 @@ import { PackingStore } from '../../../shared/application/packing.store';
 import { SpreadsheetReader } from './spreadsheet-reader';
 import type { ProjectionRow } from './spreadsheet-reader';
 import { ProjectionType } from '../domain/enums';
+import { PlanStatus } from '../../plans/domain/enums';
 import type { Actor } from '../../auth/domain/actor';
 import { assertPlantAccess, scopedPlant } from '../../auth/domain/actor';
 import { ensure } from '../../../shared/domain/domain-error';
@@ -110,11 +111,26 @@ export class ProjectionsService {
         week: input.week,
         type: input.type,
       };
-      ensure(
-        !(await store.find('projections', filter)).length,
-        'A projection for this plant, fruit, week and type already exists',
-        409,
-      );
+      // Registrar de nuevo reemplaza la proyección, mientras ningún plan de la
+      // semana haya sido enviado o aprobado.
+      const previous = await store.find('projections', filter);
+      if (previous.length) {
+        const plans = await store.find('plans', {
+          plantId: input.plantId,
+          fruitId: input.fruitId,
+          year: input.year,
+          week: input.week,
+        });
+        ensure(
+          plans.every((plan) =>
+            [PlanStatus.DRAFT, PlanStatus.REJECTED].includes(plan.status),
+          ),
+          'The projection cannot be replaced because the week has a submitted or approved plan',
+          409,
+        );
+        for (const row of previous)
+          await store.remove('projections', { id: row.id });
+      }
       const result: Projection[] = [];
       for (const row of rows) {
         let customerId: number | null = null;
