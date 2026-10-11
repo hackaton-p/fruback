@@ -2,6 +2,7 @@ import type { Projection } from '../domain/projection';
 import { Injectable } from '@nestjs/common';
 import { PackingStore } from '../../../shared/application/packing.store';
 import { SpreadsheetReader } from './spreadsheet-reader';
+import type { ProjectionRow } from './spreadsheet-reader';
 import { ProjectionType } from '../domain/enums';
 import type { Actor } from '../../auth/domain/actor';
 import { assertPlantAccess, scopedPlant } from '../../auth/domain/actor';
@@ -38,8 +39,45 @@ export class ProjectionsService {
   }
   async import(input: ImportProjection, file: Buffer, actor: Actor) {
     assertPlantAccess(actor, input.plantId);
-    weekDates(input.year, input.week);
     const rows = await this.reader.read(file, input.type);
+    return this.create(input, rows, actor);
+  }
+  async create(input: ImportProjection, rows: ProjectionRow[], actor: Actor) {
+    assertPlantAccess(actor, input.plantId);
+    weekDates(input.year, input.week);
+    ensure(
+      rows.length > 0 && rows.length <= 500,
+      'Expected between 1 and 500 rows',
+    );
+    for (const row of rows) {
+      ensure(
+        Number.isFinite(row.quantity) &&
+          row.quantity >= 0 &&
+          row.quantity <= 1e9,
+        'Invalid quantity',
+      );
+      if (input.type === ProjectionType.HARVEST) {
+        ensure(
+          typeof row.date === 'string' &&
+            /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
+            Number.isFinite(Date.parse(row.date)) &&
+            new Date(row.date).toISOString().slice(0, 10) === row.date,
+          'Invalid harvest date',
+        );
+      } else {
+        ensure(
+          typeof row.customerName === 'string' &&
+            row.customerName.trim().length > 0 &&
+            row.customerName.length <= 255 &&
+            typeof row.country === 'string' &&
+            row.country.trim().length >= 2 &&
+            row.country.length <= 100,
+          'Invalid customer',
+        );
+        row.customerName = row.customerName.trim();
+        row.country = row.country.trim();
+      }
+    }
     const keys = rows.map((row) =>
       input.type === ProjectionType.HARVEST
         ? row.date
