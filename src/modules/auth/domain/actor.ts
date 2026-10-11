@@ -11,7 +11,9 @@ export interface Actor {
 export function assertPlantAccess(actor: Actor, plantId: number) {
   ensure(
     actor.plantId === plantId ||
-      (actor.role === RoleName.DEPUTY_MANAGER && actor.plantId === null),
+      ((actor.role === RoleName.ADMIN ||
+        actor.role === RoleName.DEPUTY_MANAGER) &&
+        actor.plantId === null),
     'Plant access denied',
     403,
   );
@@ -25,7 +27,9 @@ export function scopedPlant(
     return requested;
   }
   ensure(
-    actor.plantId !== null || actor.role === RoleName.DEPUTY_MANAGER,
+    actor.plantId !== null ||
+      actor.role === RoleName.ADMIN ||
+      actor.role === RoleName.DEPUTY_MANAGER,
     'A plant assignment is required',
     403,
   );

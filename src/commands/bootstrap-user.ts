@@ -37,8 +37,8 @@ async function bootstrap() {
       );
       const user = await app
         .get(AuthService)
-        .createUser({ email, password, name, role: RoleName.DEPUTY_MANAGER });
-      console.log(`Created deputy manager ${user.email} (id ${user.id})`);
+        .createUser({ email, password, name, role: RoleName.ADMIN });
+      console.log(`Created admin ${user.email} (id ${user.id})`);
     });
   } finally {
     await app.close();

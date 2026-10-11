@@ -13,6 +13,7 @@ FROM dependencies AS build
 COPY tsconfig*.json nest-cli.json ./
 COPY src ./src
 RUN pnpm build
+RUN npx tsc --rootDir src --outDir dist src/database/migrations/*.ts
 
 FROM base AS production-dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

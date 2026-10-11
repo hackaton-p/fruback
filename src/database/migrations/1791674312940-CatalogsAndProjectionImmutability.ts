@@ -3,7 +3,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 export class CatalogsAndProjectionImmutability1791674312940 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `INSERT INTO rol (nombre) VALUES ('PLANIFICADOR'), ('SUBGERENTE'), ('JEFE_TURNO')`,
+      `INSERT INTO rol (nombre) VALUES ('ADMIN'), ('PLANIFICADOR'), ('SUBGERENTE'), ('JEFE_TURNO')`,
     );
     await queryRunner.query(
       `INSERT INTO fruta (nombre) VALUES ('Uva'), ('Arándano')`,
@@ -36,7 +36,7 @@ export class CatalogsAndProjectionImmutability1791674312940 implements Migration
       `DELETE FROM fruta WHERE nombre IN ('Uva', 'Arándano')`,
     );
     await queryRunner.query(
-      `DELETE FROM rol WHERE nombre IN ('PLANIFICADOR', 'SUBGERENTE', 'JEFE_TURNO')`,
+      `DELETE FROM rol WHERE nombre IN ('ADMIN', 'PLANIFICADOR', 'SUBGERENTE', 'JEFE_TURNO')`,
     );
   }
 }

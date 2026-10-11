@@ -34,9 +34,22 @@ La contraseña debe tener entre 12 y 72 caracteres y no superar 72 bytes UTF-8. 
 
 Los parámetros iniciales de Piura/Sullana son ejemplos del documento; reemplazarlos por los valores oficiales desde `PATCH /api/plants/:id`.
 
-### Usuarios de prueba
+## Credenciales demo
 
-Para pruebas iniciales, crea un planificador, un subgerente y un jefe de turno (uno por rol) ya vinculados a la primera planta existente:
+Tras el primer arranque (`docker compose up --build -d`), la migración `SeedUsers` crea estos usuarios:
+
+| Rol | Email | Contraseña |
+|-----|-------|------------|
+| ADMIN | admin@example.com | password123 |
+| SUBGERENTE | subgerente@example.com | password123 |
+| PLANIFICADOR | planificador@piura.com | password123 |
+| JEFE_TURNO | jefe.turno@piura.com | password123 |
+
+El rol `ADMIN` y `SUBGERENTE` tienen acceso global (sin planta asignada). `PLANIFICADOR` y `JEFE_TURNO` están asignados a la planta **Piura**.
+
+### Usuarios de prueba (comando)
+
+Para pruebas adicionales, crea un planificador, un subgerente y un jefe de turno (uno por rol) ya vinculados a la primera planta existente:
 
 ```bash
 docker compose exec api node dist/commands/seed-test-users.js
