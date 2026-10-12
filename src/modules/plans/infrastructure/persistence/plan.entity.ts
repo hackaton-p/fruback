@@ -21,11 +21,7 @@ import { UserEntity } from '../../../auth/infrastructure/persistence/user.entity
 @Index('idx_plan_0', ['plantId', 'year', 'week', 'status'])
 @Index('idx_plan_1', ['plantId', 'fruitId', 'year', 'week'], {
   unique: true,
-  where: `"estado" IN ('APROBADO', 'EN_EJECUCION')`,
-})
-@Index('idx_plan_2', ['plantId', 'fruitId', 'year', 'week'], {
-  unique: true,
-  where: `"estado" = 'BORRADOR'`,
+  where: `"estado" IN ('APROBADO', 'EN_EJECUCION', 'CERRADO')`,
 })
 export class PlanEntity extends BaseEntity {
   @Column({ name: 'plantaId', type: 'integer' }) plantId!: number;

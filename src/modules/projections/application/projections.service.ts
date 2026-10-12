@@ -54,15 +54,24 @@ export class ProjectionsService {
         Number.isFinite(row.quantity) &&
           row.quantity >= 0 &&
           row.quantity <= 1e9,
-        'Invalid quantity',
+        'Invalid projection quantity',
       );
       if (input.type === ProjectionType.HARVEST) {
+        ensure(
+          Number.isInteger(row.quantity),
+          'Harvest quantities must be whole crates',
+        );
         ensure(
           typeof row.date === 'string' &&
             /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
             Number.isFinite(Date.parse(row.date)) &&
             new Date(row.date).toISOString().slice(0, 10) === row.date,
-          'Invalid harvest date',
+          'Invalid calendar date',
+        );
+        const actual = isoWeek(row.date);
+        ensure(
+          actual.year === input.year && actual.week === input.week,
+          'Harvest date is outside the selected ISO week',
         );
       } else {
         ensure(
@@ -72,7 +81,7 @@ export class ProjectionsService {
             typeof row.country === 'string' &&
             row.country.trim().length >= 2 &&
             row.country.length <= 100,
-          'Invalid customer',
+          'Invalid projection customer',
         );
         row.customerName = row.customerName.trim();
         row.country = row.country.trim();
@@ -109,13 +118,7 @@ export class ProjectionsService {
       const result: Projection[] = [];
       for (const row of rows) {
         let customerId: number | null = null;
-        if (input.type === ProjectionType.HARVEST) {
-          const actual = isoWeek(row.date!);
-          ensure(
-            actual.year === input.year && actual.week === input.week,
-            'Harvest date is outside the selected ISO week',
-          );
-        } else {
+        if (input.type === ProjectionType.COMMERCIAL) {
           const existing = (
             await store.find('customers', { name: row.customerName })
           )[0];
