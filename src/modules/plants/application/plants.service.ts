@@ -9,6 +9,10 @@ import { assertPlantAccess, scopedPlant } from '../../auth/domain/actor';
 export class PlantsService {
   constructor(@Inject(PackingStore) private readonly store: PackingStore) {}
   async list(actor: Actor) {
+    if (actor.plantIds) {
+      const allowed = new Set(actor.plantIds);
+      return (await this.store.find('plants')).filter((plant) => allowed.has(plant.id));
+    }
     const id = scopedPlant(actor);
     return this.store.find('plants', id === undefined ? {} : { id });
   }

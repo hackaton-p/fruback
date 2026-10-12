@@ -55,9 +55,9 @@ export class UsersController {
   @ApiPage(ActorResponse)
   async list(@Query() query: PlantFilterQuery, @CurrentActor() actor: Actor) {
     const roles = await this.store.find('roles');
-    const users = await this.store.find('users', {
-      plantId: scopedPlant(actor, query.plantId),
-    });
+    const users = await this.store.find('users');
+    const selectedPlantId = scopedPlant(actor, query.plantId);
+    const memberships = await this.auth.getPlantAssignments(users.map((user) => user.id));
     return paginate(
       users.map((user) => ({
         id: user.id,
@@ -65,8 +65,9 @@ export class UsersController {
         name: user.name,
         email: user.email,
         plantId: user.plantId,
+        plantIds: [...new Set([...(user.plantId === null ? [] : [user.plantId]), ...(memberships.get(user.id) ?? [])])],
         role: roles.find((r) => r.id === user.roleId)!.name,
-      })),
+      })).filter((user) => selectedPlantId === undefined || user.plantIds.includes(selectedPlantId)),
       query,
     );
   }

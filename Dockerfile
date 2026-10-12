@@ -7,7 +7,7 @@ WORKDIR /app
 
 FROM base AS dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --store-dir=/pnpm/store
+RUN pnpm install --frozen-lockfile
 
 FROM dependencies AS build
 COPY tsconfig*.json nest-cli.json ./
@@ -17,7 +17,7 @@ RUN npx tsc --rootDir src --outDir dist src/database/migrations/*.ts
 
 FROM base AS production-dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile --store-dir=/pnpm/store
+RUN pnpm install --prod --frozen-lockfile
 
 FROM node:24-alpine AS runtime
 ENV NODE_ENV=production
