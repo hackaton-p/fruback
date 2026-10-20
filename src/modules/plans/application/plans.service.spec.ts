@@ -129,13 +129,18 @@ describe('Weekly planning workflow', () => {
       '2026-10-16',
     ]);
   });
-  it('allows creating another plan while one is pending', async () => {
-    const first = await service.apply(input, actor);
-    await service.transition(first.id, PlanStatus.PENDING, actor);
-    await service.apply(input, actor);
-    expect(tables.plans).toHaveLength(2);
-  });
-  it('approves only one plan for the same week', async () => {
+  it.each([PlanStatus.PENDING, PlanStatus.APPROVED])(
+    'allows creating another plan while one is %s',
+    async (status) => {
+      const first = await service.apply(input, actor);
+      tables.plans.find((p) => p.id === first.id)!.status = status;
+      const snapshot = structuredClone(await service.get(first.id, actor));
+      await service.apply(input, actor);
+      expect(await service.get(first.id, actor)).toEqual(snapshot);
+      expect(tables.plans).toHaveLength(2);
+    },
+  );
+  it('rejects approval on overlapping plant dates', async () => {
     const first = await service.apply(input, actor);
     const second = await service.apply(input, actor);
     await service.transition(first.id, PlanStatus.PENDING, actor);
@@ -143,7 +148,7 @@ describe('Weekly planning workflow', () => {
     await service.transition(first.id, PlanStatus.APPROVED, actor);
     await expect(
       service.transition(second.id, PlanStatus.APPROVED, actor),
-    ).rejects.toThrow('Only one plan');
+    ).rejects.toThrow('Plant is already reserved by plan');
   });
   it('does not approve another plan after the approved one closes', async () => {
     const first = await service.apply(input, actor);
@@ -152,7 +157,42 @@ describe('Weekly planning workflow', () => {
     await service.transition(second.id, PlanStatus.PENDING, actor);
     await expect(
       service.transition(second.id, PlanStatus.APPROVED, actor),
-    ).rejects.toThrow('Only one plan');
+    ).rejects.toThrow('Plant is already reserved by plan');
+  });
+  it('approves plans on disjoint dates in the same plant and week', async () => {
+    const first = await service.apply({ ...input, dayCount: 2 }, actor);
+    const second = await service.apply(
+      {
+        ...input,
+        startDate: '2026-10-14',
+        dayCount: 2,
+        selectedDates: ['2026-10-14', '2026-10-16'],
+      },
+      actor,
+    );
+    for (const plan of [first, second]) {
+      await service.transition(plan.id, PlanStatus.PENDING, actor);
+      await service.transition(plan.id, PlanStatus.APPROVED, actor);
+    }
+    expect(tables.plans.map((plan) => plan.status)).toEqual([
+      PlanStatus.APPROVED,
+      PlanStatus.APPROVED,
+    ]);
+  });
+  it('rejects overlapping reservations from legacy fruit-specific plans', async () => {
+    const first = await service.apply(input, actor);
+    const second = await service.apply(input, actor);
+    Object.assign(
+      tables.plans.find((p) => p.id === first.id)!,
+      {
+        fruitId: 1,
+        status: PlanStatus.IN_PROGRESS,
+      },
+    );
+    await service.transition(second.id, PlanStatus.PENDING, actor);
+    await expect(
+      service.transition(second.id, PlanStatus.APPROVED, actor),
+    ).rejects.toThrow('Plant is already reserved by plan');
   });
   it.each([PlanStatus.DRAFT, PlanStatus.REJECTED])(
     'discards %s without deleting weekly projections',
@@ -182,7 +222,13 @@ describe('Weekly planning workflow', () => {
   it('updates only the selected draft and blocks period changes', async () => {
     const first = await service.apply(input, actor);
     const second = await service.apply(input, actor);
-    await service.apply(input, actor, first.id);
+    const snapshot = structuredClone(await service.get(second.id, actor));
+    await service.apply(
+      { ...input, parameters: { ...parameters, efficiencyFactor: 0.9 } },
+      actor,
+      first.id,
+    );
+    expect(await service.get(second.id, actor)).toEqual(snapshot);
     expect(tables.plans).toHaveLength(2);
     expect(tables.planDays.filter((d) => d.planId === second.id)).toHaveLength(
       5,
@@ -193,6 +239,30 @@ describe('Weekly planning workflow', () => {
     await expect(
       service.apply({ ...input, startDate: '2026-10-13' }, actor, first.id),
     ).rejects.toThrow('period cannot be modified');
+  });
+  it('keeps the complete other plan detail stable after shared demand changes and one draft is edited', async () => {
+    const first = await service.apply(input, actor);
+    const second = await service.apply(input, actor);
+    const before = structuredClone(await service.get(second.id, actor));
+    tables.projections.find((row) => row.type === 'COMERCIAL')!.crates = '650';
+    const edited = await service.apply(input, actor, first.id);
+    expect(edited.commercialCratesSnapshot).toBe('650.0000');
+    expect(edited.totals.commercialCrates).toBe('650.0000');
+    expect(edited.commercialDemandSource).toBe('SNAPSHOT');
+    expect(await service.get(second.id, actor)).toEqual(before);
+  });
+  it('labels unavailable historical demand honestly until the legacy draft is explicitly edited', async () => {
+    const plan = await service.apply(input, actor);
+    tables.plans.find((row) => row.id === plan.id)!.commercialCratesSnapshot =
+      null;
+    tables.projections.find((row) => row.type === 'COMERCIAL')!.crates = '650';
+    const legacy = await service.get(plan.id, actor);
+    expect(legacy.commercialCratesSnapshot).toBeNull();
+    expect(legacy.commercialDemandSource).toBe('LIVE_LEGACY');
+    expect(legacy.totals.commercialCrates).toBe('650.0000');
+    const edited = await service.apply(input, actor, plan.id);
+    expect(edited.commercialDemandSource).toBe('SNAPSHOT');
+    expect(edited.commercialCratesSnapshot).toBe('650.0000');
   });
   it('rejects planning days outside the selected week', async () => {
     await expect(
@@ -270,7 +340,6 @@ describe('Weekly planning workflow', () => {
   });
   it.each([
     ['2026-10-12'],
-    ['2026-10-13', '2026-10-14'],
     ['2026-10-12', '2026-10-18'],
     ['2026-10-12', '2026-10-19'],
     ['2026-10-12', '2026-10-12'],

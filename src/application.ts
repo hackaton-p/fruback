@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { validationMessages } from './shared/presentation/http/validation-messages';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { OpenAPIObject } from '@nestjs/swagger';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -49,6 +50,11 @@ export async function createApplication() {
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
+      exceptionFactory: (errors) =>
+        new BadRequestException({
+          code: 'VALIDATION_ERROR',
+          message: validationMessages(errors),
+        }),
     }),
   );
   app.useGlobalFilters(new ApiErrorFilter());

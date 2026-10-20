@@ -1,4 +1,6 @@
-import { Entity, Column, Check } from 'typeorm';
+import type { Relation } from 'typeorm';
+import { UserEntity } from '../../../auth/infrastructure/persistence/user.entity';
+import { Entity, Column, Check, ManyToMany } from 'typeorm';
 import { BaseEntity } from '../../../../shared/infrastructure/persistence/base.entity';
 
 @Entity('planta')
@@ -7,6 +9,11 @@ import { BaseEntity } from '../../../../shared/infrastructure/persistence/base.e
   `"rendimientoPersonaHora" > 0 AND "personalMaximo" >= 1 AND "horasJornada" BETWEEN 1 AND 24 AND "horasExtraMax" >= 0 AND "factorEficiencia" BETWEEN 0.1 AND 1 AND "toleranciaVolumen" BETWEEN 0 AND 100`,
 )
 export class PlantEntity extends BaseEntity {
+  @ManyToMany(() => UserEntity, (user) => user.plants, {
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
+  users!: Relation<UserEntity[]>;
   @Column({ name: 'nombre', type: 'varchar', length: 255, unique: true })
   name!: string;
   @Column({

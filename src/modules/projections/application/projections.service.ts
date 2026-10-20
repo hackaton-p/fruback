@@ -104,14 +104,24 @@ export class ProjectionsService {
         404,
       );
       const plant = await store.get('plants', input.plantId);
-      ensure(plant && plant.isActive !== false, 'Plant not found or inactive', 404);
-      const fruit = await store.get('fruits', input.fruitId);
-      ensure(fruit && fruit.isActive !== false, 'Fruit not found or inactive', 404);
       ensure(
-        (await store.find('plantFruits', {
-          plantId: input.plantId,
-          fruitId: input.fruitId,
-        })).length > 0,
+        plant && plant.isActive !== false,
+        'Plant not found or inactive',
+        404,
+      );
+      const fruit = await store.get('fruits', input.fruitId);
+      ensure(
+        fruit && fruit.isActive !== false,
+        'Fruit not found or inactive',
+        404,
+      );
+      ensure(
+        (
+          await store.find('plantFruits', {
+            plantId: input.plantId,
+            fruitId: input.fruitId,
+          })
+        ).length > 0,
         'Fruit is not enabled for this plant',
         409,
       );
@@ -128,13 +138,14 @@ export class ProjectionsService {
       if (previous.length) {
         const plans = await store.find('plans', {
           plantId: input.plantId,
-          fruitId: input.fruitId,
           year: input.year,
           week: input.week,
         });
         ensure(
-          plans.every((plan) =>
-            [PlanStatus.DRAFT, PlanStatus.REJECTED].includes(plan.status),
+          plans.every(
+            (plan) =>
+              (plan.fruitId !== null && plan.fruitId !== input.fruitId) ||
+              [PlanStatus.DRAFT, PlanStatus.REJECTED].includes(plan.status),
           ),
           'The projection cannot be replaced because the week has a submitted or approved plan',
           409,

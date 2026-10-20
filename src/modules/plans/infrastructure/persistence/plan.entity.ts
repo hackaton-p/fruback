@@ -19,16 +19,13 @@ import { UserEntity } from '../../../auth/infrastructure/persistence/user.entity
   `"estado" <> 'RECHAZADO' OR ("comentarioAprobacion" IS NOT NULL AND length(trim("comentarioAprobacion")) > 0)`,
 )
 @Index('idx_plan_0', ['plantId', 'year', 'week', 'status'])
-@Index('idx_plan_1', ['plantId', 'year', 'week'], {
-  unique: true,
-  where: `"frutaId" IS NULL AND "estado" IN ('APROBADO', 'EN_EJECUCION', 'CERRADO')`,
-})
 export class PlanEntity extends BaseEntity {
   @Column({ name: 'plantaId', type: 'integer' }) plantId!: number;
   @ManyToOne(() => PlantEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'plantaId' })
   plant!: Relation<PlantEntity>;
-  @Column({ name: 'frutaId', type: 'integer', nullable: true }) fruitId!: number | null;
+  @Column({ name: 'frutaId', type: 'integer', nullable: true }) fruitId!:
+    number | null;
   @ManyToOne(() => FruitEntity, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'frutaId' })
   fruit!: Relation<FruitEntity> | null;
@@ -42,6 +39,14 @@ export class PlanEntity extends BaseEntity {
     transformer: plantParametersTransformer,
   })
   parametersSnapshot!: PlantParameters;
+  @Column({
+    name: 'demandaComercialUsada',
+    type: 'numeric',
+    precision: 14,
+    scale: 4,
+    nullable: true,
+  })
+  commercialCratesSnapshot!: string | null;
   @Column({ name: 'parametrosModificados', type: 'boolean', default: false })
   hasModifiedParameters!: boolean;
   @Column({ name: 'estado', type: 'varchar', length: 255, default: 'BORRADOR' })

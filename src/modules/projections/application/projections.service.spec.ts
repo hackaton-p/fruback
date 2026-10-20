@@ -35,7 +35,9 @@ describe('Projection registration', () => {
     jest.resetAllMocks();
     store.get.mockResolvedValue({ id: 1 });
     store.find.mockImplementation((table: string) =>
-      Promise.resolve(table === 'plantFruits' ? [{ plantId: 1, fruitId: 1 }] : []),
+      Promise.resolve(
+        table === 'plantFruits' ? [{ plantId: 1, fruitId: 1 }] : [],
+      ),
     );
     store.save.mockImplementation(
       (_table: string, data: Record<string, unknown>) =>
@@ -141,7 +143,7 @@ describe('Projection registration', () => {
       Promise.resolve(
         table === 'projections'
           ? [{ id: 7 }]
-          : [{ status: PlanStatus.PENDING }],
+          : [{ fruitId: null, status: PlanStatus.PENDING }],
       ),
     );
     await expect(
@@ -150,6 +152,46 @@ describe('Projection registration', () => {
     expect(store.remove).not.toHaveBeenCalled();
     expect(store.save).not.toHaveBeenCalled();
   });
+  it.each([
+    PlanStatus.PENDING,
+    PlanStatus.APPROVED,
+    PlanStatus.IN_PROGRESS,
+    PlanStatus.CLOSED,
+  ])(
+    'preserves projections reserved by a consolidated %s plan',
+    async (status) => {
+      store.find.mockImplementation(
+        (table: string, filter: Record<string, unknown>) => {
+          const tables: Record<string, Record<string, unknown>[]> = {
+            projections: [{ id: 7, ...input }],
+            plantFruits: [{ plantId: 1, fruitId: 1 }],
+            plans: [
+              {
+                id: 2,
+                plantId: 1,
+                fruitId: null,
+                year: 2026,
+                week: 42,
+                status,
+              },
+            ],
+          };
+          return Promise.resolve(
+            (tables[table] ?? []).filter((row) =>
+              Object.entries(filter).every(
+                ([key, value]) => row[key] === value,
+              ),
+            ),
+          );
+        },
+      );
+      await expect(
+        service.create(input, [{ date: '2026-10-12', quantity: 10 }], actor),
+      ).rejects.toThrow('cannot be replaced');
+      expect(store.remove).not.toHaveBeenCalled();
+      expect(store.save).not.toHaveBeenCalled();
+    },
+  );
   it('rejects another plant', async () => {
     await expect(
       service.create(

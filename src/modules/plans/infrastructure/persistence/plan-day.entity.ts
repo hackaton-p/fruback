@@ -14,7 +14,7 @@ import { PlanEntity } from './plan.entity';
 )
 @Index('idx_plan_dia_0', ['planId', 'date'], { unique: true })
 export class PlanDayEntity extends BaseEntity {
-  @Column({ name: 'jabasMetaPorFruta', type: 'jsonb', default: () => "'[]'::jsonb" })
+  @Column({ name: 'jabasMetaPorFruta', type: 'jsonb', default: [] })
   fruitTargets!: { fruitId: number; fruitName: string; crates: string }[];
   @Column({ type: 'integer' }) planId!: number;
   @ManyToOne(() => PlanEntity, { nullable: false, onDelete: 'RESTRICT' })

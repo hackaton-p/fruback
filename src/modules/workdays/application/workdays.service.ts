@@ -456,6 +456,12 @@ export class WorkdaysService {
   ) {
     return this.store.transaction(async (store) => {
       const { workday, day, plan } = await this.editable(store, id, actor);
+      const closedAt = new Date();
+      ensure(
+        closedAt.getTime() >= workday.startedAt.getTime(),
+        'No puedes cerrar una jornada antes de su fecha y hora de inicio. Espera hasta el inicio registrado.',
+        409,
+      );
       const receivedCrates =
         input.receivedCrates ??
         Math.max(Number(workday.receivedCrates), input.processedCrates);
@@ -493,7 +499,7 @@ export class WorkdaysService {
       ensure(submitted.every((item) => item.crates >= (previousByFruit.get(item.fruitId) ?? 0)), 'Fruit quantities cannot decrease');
       await store.save('workdays', {
         id,
-        closedAt: new Date(),
+        closedAt,
         workedHours: decimal(input.workedHours),
         receivedCrates: decimal(receivedCrates),
         processedCrates: decimal(input.processedCrates),

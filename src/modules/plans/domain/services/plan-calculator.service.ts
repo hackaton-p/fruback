@@ -1,3 +1,4 @@
+import { DomainError, ensure } from '../../../../shared/domain/domain-error';
 import type { PlantParameters } from '../../../plants/domain/plant-parameters';
 
 export class PlanCalculatorService {
@@ -30,7 +31,14 @@ export class PlanCalculatorService {
       !Number.isInteger(maximum) ||
       maximum < 1
     )
-      throw new Error('Parámetros de planificación inválidos');
+      throw new DomainError(
+        400,
+        'Revisa la meta (no negativa), el rendimiento (mayor a 0), la eficiencia (0.1 a 1), las horas de jornada (1 a 24) y el personal máximo (entero positivo).',
+      );
+    ensure(
+      targetCrates < 1e10,
+      'La meta diaria supera el límite de jabas. Reduce el volumen antes de calcular.',
+    );
 
     const workers = Math.min(
       Math.ceil(targetCrates / (productivity * efficiency * workday)),
@@ -40,6 +48,10 @@ export class PlanCalculatorService {
       targetCrates === 0
         ? 0
         : targetCrates / (workers * productivity * efficiency);
+    ensure(
+      Number.isFinite(hours) && hours < 1e10,
+      'Las horas calculadas superan el límite permitido. Revisa el rendimiento y la eficiencia; aumenta el personal o reduce la meta diaria.',
+    );
     // With no target, the relative margin is undefined; avoid NaN/Infinity in JSON.
     const margin =
       targetCrates === 0

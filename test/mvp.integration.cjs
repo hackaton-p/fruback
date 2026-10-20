@@ -38,6 +38,7 @@ describe('Packing MVP HTTP integration', { concurrency: false }, () => {
   plantId=(await store.save('plants',{name:`HTTP plant ${suffix}`,...parameters,configurationCompletedAt:new Date()})).id;
   otherPlantId=(await store.save('plants',{name:`Other HTTP plant ${suffix}`,...parameters,configurationCompletedAt:new Date()})).id;
   fruitId=(await store.find('fruits'))[0].id;
+  await store.save('plantFruits',{plantId,fruitId});
   const auth=app.get(AuthService);
   await auth.createUser({name:'Manager',email:`manager-${suffix}@example.test`,password,role:RoleName.DEPUTY_MANAGER});
   const manager=await login(`manager-${suffix}@example.test`);managerToken=manager.body.token;managerCookie=manager.headers['set-cookie'];
@@ -67,7 +68,7 @@ describe('Packing MVP HTTP integration', { concurrency: false }, () => {
  });
  it('enforces roles, plant isolation, cookie origins and DTO validation',async()=>{
   await api.get(`/api/plants/${plantId}`).set(authHeaders(outsiderToken)).expect(403);
-  await api.patch(`/api/plants/${plantId}`).set(authHeaders(plannerToken)).send({maxWorkers:999}).expect(403);
+  await api.patch(`/api/plants/${plantId}`).set(authHeaders(plannerToken)).send({maxWorkers:300}).expect(200);
   await api.post('/api/users').set(authHeaders(plannerToken)).send({}).expect(403);
   await api.patch(`/api/plants/${plantId}`).set('Cookie',managerCookie).send({maxWorkers:300}).expect(403);
   await api.patch(`/api/plants/${plantId}`).set('Cookie',managerCookie).set('Origin',origin).send({maxWorkers:300}).expect(200);
@@ -75,16 +76,20 @@ describe('Packing MVP HTTP integration', { concurrency: false }, () => {
   await api.patch(`/api/plants/${plantId}`).set(authHeaders(managerToken)).send({unexpected:true}).expect(400);
   await api.get('/api/plans?limit=1000').set(authHeaders(managerToken)).expect(400);
  });
- it('validates complete spreadsheets and imports immutable harvest and commercial projections',async()=>{
+ it('validates spreadsheets and replaces draft-week harvest projections without duplication',async()=>{
   const bad=await workbook(['date','quantity'],[[date,13000],['2020-01-01',1]]);await upload('COSECHA',bad,400);
   const empty=(await api.get(`/api/projections?plantId=${plantId}&fruitId=${fruitId}&year=${week.year}&week=${week.week}`).set(authHeaders(plannerToken)).expect(200)).body;assert.equal(empty.length,0);
   await api.post('/api/projections/import').set(authHeaders(plannerToken)).field('plantId',String(plantId)).field('fruitId',String(fruitId)).field('year',String(week.year)).field('week',String(week.week)).field('type','COSECHA').field('unit','TONNES').attach('file',await workbook(['date','quantity'],[[date,13000]]),'projection.xlsx').expect(400);
-  const harvest=await workbook(['date','quantity'],weekDates(week.year,week.week).slice(0,5).map((day,index)=>[day,index===0?13000:0]));await upload('COSECHA',harvest);await upload('COSECHA',harvest,409);
+  const harvest=await workbook(['date','quantity'],weekDates(week.year,week.week).slice(0,5).map((day,index)=>[day,index===0?13000:0]));const original=await upload('COSECHA',harvest);const replacement=await upload('COSECHA',harvest);
+  assert.equal(replacement.body.imported,5);assert.notEqual(replacement.body.items[0].id,original.body.items[0].id);
+  const imported=(await api.get(`/api/projections?plantId=${plantId}&fruitId=${fruitId}&year=${week.year}&week=${week.week}`).set(authHeaders(plannerToken)).expect(200)).body;assert.equal(imported.length,5);
   await upload('COMERCIAL',await workbook(['customerName','country','quantity'],[[`Customer ${suffix}`,'Peru',15400]]));
  });
  it('simulates without saving, applies, rejects and reapplies an official plan',async()=>{
-  const input={plantId,fruitId,...week,harvestScenario:'PROYECTADA',parameters:planParameters};
+  const input={plantId,...week,harvestScenario:'PROYECTADA',parameters:planParameters};
   await api.post('/api/plans/simulate').set(authHeaders(plannerToken)).send({...input,parameters:undefined}).expect(400);
+  const invalidParameters=(await api.post('/api/plans/simulate').set(authHeaders(plannerToken)).send({...input,parameters:{...planParameters,efficiencyFactor:0}}).expect(400)).body;
+  assert.equal(invalidParameters.code,'VALIDATION_ERROR');assert.ok(invalidParameters.message.some(message=>message.includes('Eficiencia')&&message.includes('0.1')));
   const modified=(await api.post('/api/plans/simulate').set(authHeaders(plannerToken)).send({...input,parameters:{...planParameters,efficiencyFactor:0.85}}).expect(200)).body;assert.equal(modified.hasModifiedParameters,true);assert.equal(modified.parameterChanges.length,1);
   const simulation=(await api.post('/api/plans/simulate').set(authHeaders(plannerToken)).send(input).expect(200)).body;assert.equal(simulation.days[0].workers,276);
   const before=(await api.get(`/api/plans?plantId=${plantId}`).set(authHeaders(plannerToken)).expect(200)).body;assert.equal(before.total,0);
@@ -103,12 +108,13 @@ describe('Packing MVP HTTP integration', { concurrency: false }, () => {
   await api.post(`/api/plans/${planId}/approve`).set(authHeaders(managerToken)).expect(200);
   const approved=(await api.get(`/api/plans?plantId=${plantId}&status=PENDIENTE`).set(authHeaders(managerToken)).expect(200)).body;assert.equal(approved.statusCounts.PENDIENTE,0);assert.equal(approved.statusCounts.APROBADO,1);
   await api.post(`/api/plans/${planId}/approve`).set(authHeaders(managerToken)).expect(409);
-  await api.post('/api/plans').set(authHeaders(plannerToken)).send({plantId,fruitId,...week,harvestScenario:'PLUS_10'}).expect(400);
-  const alternative=(await api.post('/api/plans').set(authHeaders(plannerToken)).send({plantId,fruitId,...week,harvestScenario:'+10',parameters:planParameters}).expect(201)).body;
+  await upload('COSECHA',await workbook(['date','quantity'],weekDates(week.year,week.week).slice(0,5).map((day,index)=>[day,index===0?13000:0])),409);
+  await api.post('/api/plans').set(authHeaders(plannerToken)).send({plantId,...week,harvestScenario:'PLUS_10'}).expect(400);
+  const alternative=(await api.post('/api/plans').set(authHeaders(plannerToken)).send({plantId,...week,harvestScenario:'+10',parameters:planParameters}).expect(201)).body;
   assert.notEqual(alternative.id,planId);
   await api.delete(`/api/plans/${alternative.id}`).set(authHeaders(plannerToken)).expect(204);
   await api.get(`/api/plans/${alternative.id}`).set(authHeaders(plannerToken)).expect(404);
-  await api.patch(`/api/plans/${planId}`).set(authHeaders(plannerToken)).send({plantId,fruitId,...week,harvestScenario:'+10',parameters:planParameters}).expect(409);
+  await api.patch(`/api/plans/${planId}`).set(authHeaders(plannerToken)).send({plantId,...week,harvestScenario:'+10',parameters:planParameters}).expect(409);
   await api.patch(`/api/plants/${plantId}`).set(authHeaders(managerToken)).send({cratesPerWorkerHour:9}).expect(200);
   const plan=(await api.get(`/api/plans/${planId}`).set(authHeaders(plannerToken)).expect(200)).body;assert.deepEqual(plan.parametersSnapshot,initialSnapshot);
   await api.get(`/api/plans/${planId}`).set(authHeaders(outsiderToken)).expect(403);
@@ -123,6 +129,9 @@ describe('Packing MVP HTTP integration', { concurrency: false }, () => {
   const results=await Promise.all([api.post('/api/workdays').set(authHeaders(shiftToken)).send(input),api.post('/api/workdays').set(authHeaders(shiftToken)).send(input)]);
   assert.deepEqual(results.map(r=>r.status).sort(),[201,409]);const opened=results.find(r=>r.status===201).body;workdayId=opened.id;
   assert.ok(Number(opened.initialEstimatedHours)>14);assert.equal(Number(opened.expectedDailyCrates),13000);
+  const prematureClose=(await api.post(`/api/workdays/${workdayId}/close`).set(authHeaders(shiftToken)).send({workedHours:1,processedCrates:0,discardedCrates:0,looseKg:0,fixedKg:0}).expect(409)).body;
+  assert.match(prematureClose.message,/antes de su fecha y hora de inicio/);
+  assert.equal((await store.get('workdays',workdayId)).closedAt,null);
  });
  it('records all event types and uses accumulated person-hours after staff changes',async()=>{
   const at=hours=>new Date(new Date(startedAt).getTime()+hours*3600000).toISOString();
@@ -149,7 +158,11 @@ describe('Packing MVP HTTP integration', { concurrency: false }, () => {
   assert.equal(details.attendance[0].startingWorkers,attendance[0].startingWorkers);
   assert.equal(Number(details.progress[0].estimatedHours),Number(record.estimatedHours));
  });
- it('adjusts hours only and closes workday and plan with a negative difference',async()=>{
+ it('adjusts hours only and closes workday and plan with a negative difference',async(context)=>{
+  // Planning is future-only; advance the application clock to the actual shift end.
+  context.mock.timers.enable({apis:['Date'],now:new Date(new Date(startedAt).getTime()+12*3600000)});
+  shiftToken=(await login(`shift-${suffix}@example.test`)).body.token;
+  managerToken=(await login(`manager-${suffix}@example.test`)).body.token;
   await api.patch(`/api/plan-days/${dayId}/hours`).set(authHeaders(shiftToken)).send({adjustedHours:16,reason:'PERSONAL_PRESENTE',targetCrates:20000}).expect(400);
   const day=(await api.patch(`/api/plan-days/${dayId}/hours`).set(authHeaders(shiftToken)).send({adjustedHours:16,reason:'PERSONAL_PRESENTE'}).expect(200)).body;assert.equal(Number(day.targetCrates),13000);
   const result=(await api.post(`/api/workdays/${workdayId}/close`).set(authHeaders(shiftToken)).send({workedHours:12,receivedCrates:15000,processedCrates:11000,discardedCrates:100,looseKg:1000,fixedKg:89200}).expect(200)).body;
@@ -165,6 +178,53 @@ describe('Packing MVP HTTP integration', { concurrency: false }, () => {
   await api.get(`/api/workdays/${workdayId}`).set(authHeaders(outsiderToken)).expect(403);
   const details=(await api.get(`/api/workdays/${workdayId}`).set(authHeaders(shiftToken)).expect(200)).body;assert.equal(details.progress.length,4);
   for(const path of ['/api/workdays','/api/customers','/api/fruits','/api/areas','/api/users','/api/plants']) await api.get(path).set(authHeaders(managerToken)).expect(200);
+ });
+ it('keeps same-week drafts independent and serializes overlapping approvals while allowing disjoint dates',async()=>{
+  await store.save('plantFruits',{plantId:otherPlantId,fruitId});
+  const dates=weekDates(week.year,week.week).slice(0,6);
+  for(const [type,headers,rows] of [
+   ['COSECHA',['date','quantity'],dates.map(day=>[day,1000])],
+   ['COMERCIAL',['customerName','country','quantity'],[[`Independent customer ${suffix}`,'Peru',6000]]],
+  ]) {
+   await api.post('/api/projections/import').set(authHeaders(outsiderToken))
+    .field('plantId',String(otherPlantId)).field('fruitId',String(fruitId))
+    .field('year',String(week.year)).field('week',String(week.week)).field('type',type)
+    .attach('file',await workbook(headers,rows),'projection.xlsx').expect(201);
+  }
+  const input={plantId:otherPlantId,...week,harvestScenario:'PROYECTADA',parameters:planParameters,selectedDates:dates.slice(0,2)};
+  const create=body=>api.post('/api/plans').set(authHeaders(outsiderToken)).send(body).expect(201);
+  const first=(await create(input)).body;
+  const second=(await create(input)).body;
+  assert.notEqual(first.id,second.id);
+  assert.deepEqual(first.days.map(day=>day.date),dates.slice(0,2));
+  const secondBefore=(await api.get(`/api/plans/${second.id}`).set(authHeaders(outsiderToken)).expect(200)).body;
+  assert.equal(Number(secondBefore.commercialCratesSnapshot),6000);
+  await api.post('/api/projections/import').set(authHeaders(outsiderToken))
+   .field('plantId',String(otherPlantId)).field('fruitId',String(fruitId))
+   .field('year',String(week.year)).field('week',String(week.week)).field('type','COMERCIAL')
+   .attach('file',await workbook(['customerName','country','quantity'],[[`Independent customer ${suffix}`,'Peru',8000]]),'projection.xlsx').expect(201);
+  const modifiedParameters={...planParameters,efficiencyFactor:0.9};
+  const edited=(await api.patch(`/api/plans/${first.id}`).set(authHeaders(outsiderToken)).send({...input,parameters:modifiedParameters}).expect(200)).body;
+  assert.equal(edited.id,first.id);
+  assert.equal(Number(edited.parametersSnapshot.efficiencyFactor),0.9);
+  assert.equal(Number(edited.commercialCratesSnapshot),8000);
+  assert.equal(Number(edited.totals.commercialCrates),8000);
+  const unchanged=(await api.get(`/api/plans/${second.id}`).set(authHeaders(outsiderToken)).expect(200)).body;
+  assert.deepEqual(unchanged,secondBefore);
+  assert.equal(Number(unchanged.totals.commercialCrates),6000);
+  assert.deepEqual(unchanged.parametersSnapshot,second.parametersSnapshot);
+  assert.deepEqual(unchanged.days,second.days);
+  await api.patch(`/api/plans/${first.id}`).set(authHeaders(outsiderToken)).send({...input,selectedDates:dates.slice(2,4)}).expect(409);
+  for(const id of [first.id,second.id]) await api.post(`/api/plans/${id}/submit`).set(authHeaders(outsiderToken)).expect(200);
+  const approvals=await Promise.all([first.id,second.id].map(id=>api.post(`/api/plans/${id}/approve`).set(authHeaders(managerToken))));
+  assert.deepEqual(approvals.map(result=>result.status).sort(),[200,409]);
+  const statuses=await Promise.all([first.id,second.id].map(async id=>(await api.get(`/api/plans/${id}`).set(authHeaders(managerToken)).expect(200)).body.status));
+  assert.deepEqual(statuses.sort(),['APROBADO','PENDIENTE']);
+  const disjoint=(await create({...input,selectedDates:[dates[3],dates[5]]})).body;
+  assert.deepEqual(disjoint.days.map(day=>day.date),[dates[3],dates[5]]);
+  await api.post(`/api/plans/${disjoint.id}/submit`).set(authHeaders(outsiderToken)).expect(200);
+  const approved=(await api.post(`/api/plans/${disjoint.id}/approve`).set(authHeaders(managerToken)).expect(200)).body;
+  assert.equal(approved.status,'APROBADO');
  });
  it('revokes sessions on logout',async()=>{
   await api.post('/api/auth/sign-out').set(authHeaders(outsiderToken)).set('Origin',origin).send({}).expect(200);

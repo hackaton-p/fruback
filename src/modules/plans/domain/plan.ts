@@ -10,6 +10,7 @@ export interface Plan extends DomainRecord {
   week: number;
   harvestScenario: HarvestScenario;
   parametersSnapshot: PlantParameters;
+  commercialCratesSnapshot: string | null;
   hasModifiedParameters: boolean;
   status: PlanStatus;
   createdById: number;

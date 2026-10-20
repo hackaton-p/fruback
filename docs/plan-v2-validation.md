@@ -1,4 +1,6 @@
-# Validación del plan v2
+# Validación del plan v2 — antecedente histórico
+
+> Este documento conserva decisiones y validaciones del MVP v2 original. No es el contrato actual de multiplicidad: la restricción de un plan por planta/fruta/semana queda sustituida por identidades independientes y conflictos de planta/fecha al aprobar. Consultar [guía vigente](getting-started.md) y [alcance full-stack](00_LEEME_PRIMERO.md). Las validaciones descritas aquí no prueban el incremento actual.
 
 Referencias: `contexto-plan-packing-v2.md` y las cinco pantallas contenidas en `claude-design-front/2 - Plan de Packing · Pantallas.html`. Se revisaron las vistas, formularios y cálculos incluidos en el HTML exportado. Este repositorio implementa el backend; el HTML permanece como referencia, sin modificarlo.
 
@@ -34,7 +36,7 @@ La guía y OpenAPI describen los contratos completos. Las rutas e identificadore
 ## Decisiones ante diferencias entre documento y prototipo
 
 - Se conserva Better Auth con sesiones, según la instrucción explícita del proyecto; la mención a JWT no constituye un cambio del v2 respecto de v1.
-- Se conserva un plan por planta, fruta y semana ISO (incluido año), como indica el modelo detallado, aunque el resumen abrevia a planta/semana.
+- Decisión histórica, sustituida: se conservaba un plan por planta, fruta y semana ISO. Ahora la semana es un filtro y cada creación tiene identidad propia.
 - En ejecución se usa la producción realmente registrada. El prototipo extrapola producción entre eventos; el documento v2 define pendiente como volumen esperado menos jabas registradas.
 - AVANCE alerta por exceso positivo sobre tolerancia, según la tabla del v2. El prototipo usa desvío absoluto y limita recepción esperada a la meta: esa lógica no reemplaza la fórmula explícita del documento. VOLUMEN alerta por cambios del total esperado en ambas direcciones, como muestra la pantalla.
 - Una estimación imposible por cero personal/productividad es `null`, nunca Infinity ni una duración ficticia.

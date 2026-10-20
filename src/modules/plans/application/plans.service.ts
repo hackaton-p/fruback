@@ -64,7 +64,11 @@ export class PlansService {
   private async calculate(store: PackingStore, input: PlanInput) {
     weekDates(input.year, input.week);
     const plant = await store.get('plants', input.plantId);
-    ensure(plant && plant.isActive !== false, 'Plant not found or inactive', 404);
+    ensure(
+      plant && plant.isActive !== false,
+      'Plant not found or inactive',
+      404,
+    );
     ensure(
       plant.configurationCompletedAt,
       'Confirm the plant configuration before planning',
@@ -119,7 +123,9 @@ export class PlansService {
         409,
       );
     }
-    const datesForPlan = input.selectedDates ?? [...new Set(harvest.map((row) => row.date!))];
+    const datesForPlan = input.selectedDates ?? [
+      ...new Set(harvest.map((row) => row.date!)),
+    ];
     const demandedFruitIds = new Set(commercial.map((row) => row.fruitId));
     ensure(
       [...demandedFruitIds].every((fruitId) =>
@@ -143,69 +149,91 @@ export class PlansService {
     const harvestByDateAndFruit = new Map<string, Map<number, number>>();
     const demandByFruit = new Map<number, number>();
     for (const row of commercial)
-      demandByFruit.set(row.fruitId, (demandByFruit.get(row.fruitId) ?? 0) + Number(row.crates));
+      demandByFruit.set(
+        row.fruitId,
+        (demandByFruit.get(row.fruitId) ?? 0) + Number(row.crates),
+      );
     for (const row of harvest)
       harvestByDate.set(
         row.date!,
         (harvestByDate.get(row.date!) ?? 0) + Number(row.crates),
       );
     for (const row of harvest) {
-      const byFruit = harvestByDateAndFruit.get(row.date!) ?? new Map<number, number>();
-      byFruit.set(row.fruitId, (byFruit.get(row.fruitId) ?? 0) + Number(row.crates));
+      const byFruit =
+        harvestByDateAndFruit.get(row.date!) ?? new Map<number, number>();
+      byFruit.set(
+        row.fruitId,
+        (byFruit.get(row.fruitId) ?? 0) + Number(row.crates),
+      );
       harvestByDateAndFruit.set(row.date!, byFruit);
     }
     const remainingDemand = new Map(demandByFruit);
     const days: CalculatedPlanDay[] = [];
-    for (const [date] of [...harvestByDate.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    for (const [date] of [...harvestByDate.entries()].sort(([a], [b]) =>
+      a.localeCompare(b),
+    )) {
       const fruitTargets: PlanDay['fruitTargets'] = [];
-      for (const [fruitId, crates] of harvestByDateAndFruit.get(date) ?? new Map()) {
+      for (const [fruitId, crates] of harvestByDateAndFruit.get(date) ??
+        new Map<number, number>()) {
         if ((remainingDemand.get(fruitId) ?? 0) <= 0) continue;
         const fruit = await store.get('fruits', fruitId);
         ensure(fruit, 'Fruit not found', 404);
-        const target = Math.min(crates * multiplier, remainingDemand.get(fruitId) ?? 0);
-        remainingDemand.set(fruitId, Math.max(0, (remainingDemand.get(fruitId) ?? 0) - target));
-        fruitTargets.push({ fruitId, fruitName: fruit.name, crates: decimal(target) });
-      }
-        const targetCrates = decimal(fruitTargets.reduce((sum, target) => sum + Number(target.crates), 0));
-        const calculation = this.calculator.calculateDay(
-          Number(targetCrates),
-          parametersSnapshot,
+        const target = Math.min(
+          crates * multiplier,
+          remainingDemand.get(fruitId) ?? 0,
         );
-        const support: CalculatedPlanDay['areas'] = areas
-          .filter((a) => a.id !== packing.id)
-          .map((area) => ({
-            areaId: area.id,
-            plannedWorkers: Math.round(
-              calculation.workers * Number(area.proportion),
-            ),
+        remainingDemand.set(
+          fruitId,
+          Math.max(0, (remainingDemand.get(fruitId) ?? 0) - target),
+        );
+        fruitTargets.push({
+          fruitId,
+          fruitName: fruit.name,
+          crates: decimal(target),
+        });
+      }
+      const targetCrates = decimal(
+        fruitTargets.reduce((sum, target) => sum + Number(target.crates), 0),
+      );
+      const calculation = this.calculator.calculateDay(
+        Number(targetCrates),
+        parametersSnapshot,
+      );
+      const support: CalculatedPlanDay['areas'] = areas
+        .filter((a) => a.id !== packing.id)
+        .map((area) => ({
+          areaId: area.id,
+          plannedWorkers: Math.round(
+            calculation.workers * Number(area.proportion),
+          ),
+          arrivedWorkers: null,
+          startingWorkers: null,
+          presentWorkers: null,
+        }));
+      const packingWorkers =
+        calculation.workers -
+        support.reduce((sum, a) => sum + a.plannedWorkers, 0);
+      ensure(packingWorkers >= 0, 'Area proportions exceed total staff', 409);
+      days.push({
+        date,
+        targetCrates,
+        fruitTargets,
+        workers: calculation.workers,
+        hours: decimal(calculation.hours),
+        margin: calculation.margin,
+        dayStatus: calculation.dayStatus,
+        hasLowMargin: calculation.hasLowMargin,
+        areas: [
+          ...support,
+          {
+            areaId: packing.id,
+            plannedWorkers: packingWorkers,
             arrivedWorkers: null,
             startingWorkers: null,
             presentWorkers: null,
-          }));
-        const packingWorkers =
-          calculation.workers -
-          support.reduce((sum, a) => sum + a.plannedWorkers, 0);
-        ensure(packingWorkers >= 0, 'Area proportions exceed total staff', 409);
-        days.push({
-          date,
-          targetCrates,
-          fruitTargets,
-          workers: calculation.workers,
-          hours: decimal(calculation.hours),
-          margin: calculation.margin,
-          dayStatus: calculation.dayStatus,
-          hasLowMargin: calculation.hasLowMargin,
-          areas: [
-            ...support,
-            {
-              areaId: packing.id,
-              plannedWorkers: packingWorkers,
-              arrivedWorkers: null,
-              startingWorkers: null,
-              presentWorkers: null,
-            },
-          ],
-        });
+          },
+        ],
+      });
     }
     const target = days.reduce((sum, d) => sum + Number(d.targetCrates), 0);
     const demand = commercial.reduce((sum, p) => sum + Number(p.crates), 0);
@@ -249,22 +277,26 @@ export class PlansService {
         'New plans must start next week or later',
       );
       const selected =
-        input.selectedDates ?? dates.slice(0, input.dayCount ?? 5);
+        input.selectedDates ??
+        dates.slice(
+          dates.indexOf(input.startDate ?? monday),
+          dates.indexOf(input.startDate ?? monday) + (input.dayCount ?? 5),
+        );
       const dayCount = selected.length;
       ensure(
         Number.isInteger(dayCount) &&
           dayCount >= 2 &&
           dayCount <= 6 &&
           new Set(selected).size === dayCount &&
-          selected.includes(monday) &&
           selected.every((date) => dates.slice(0, 6).includes(date)) &&
           (input.dayCount === undefined || input.dayCount === dayCount) &&
-          (input.startDate ?? monday) === monday,
+          (input.startDate === undefined ||
+            input.startDate === [...selected].sort()[0]),
         'Invalid planning period',
       );
       input = {
         ...input,
-        startDate: monday,
+        startDate: [...selected].sort()[0],
         dayCount,
         selectedDates: [...selected].sort(),
       };
@@ -275,18 +307,9 @@ export class PlansService {
         'Plant not found',
         404,
       );
-      const weeklyPlans = await store.find('plans', {
-        plantId: input.plantId,
-        year: input.year,
-        week: input.week,
-      });
-      const previous = planId === undefined
-        ? weeklyPlans
-            .filter((plan) => plan.fruitId === null && [PlanStatus.DRAFT, PlanStatus.REJECTED].includes(plan.status))
-            .sort((a, b) => b.id - a.id)[0] ?? null
-        : await store.get('plans', planId, true);
-      if (planId !== undefined || previous) {
-        if (planId !== undefined) ensure(previous, 'Plan not found', 404);
+      const previous =
+        planId === undefined ? null : await store.get('plans', planId, true);
+      if (planId !== undefined) {
         ensure(previous, 'Plan not found', 404);
         assertPlantAccess(actor, previous.plantId);
         ensure(
@@ -303,7 +326,7 @@ export class PlansService {
         );
         const previousDays = await store.find(
           'planDays',
-          { planId },
+          { planId: previous.id },
           { orderBy: 'date' },
         );
         ensure(previousDays.length > 0, 'Plan has no days', 409);
@@ -323,12 +346,6 @@ export class PlansService {
           dayCount: previousDays.length,
           selectedDates: previousDates,
         };
-      } else {
-        ensure(
-          !weeklyPlans.some((plan) => plan.fruitId === null),
-          'A weekly plan already exists and cannot be replaced in its current state',
-          409,
-        );
       }
       const calculated = await this.calculate(store, input);
       if (previous)
@@ -347,6 +364,7 @@ export class PlansService {
         week: input.week,
         harvestScenario: input.harvestScenario,
         parametersSnapshot: calculated.parametersSnapshot,
+        commercialCratesSnapshot: calculated.totals.commercialCrates,
         hasModifiedParameters: calculated.hasModifiedParameters,
         status: PlanStatus.DRAFT,
         createdById: actor.id,
@@ -401,19 +419,26 @@ export class PlansService {
         ...this.dayMetrics(day, plan),
       })),
     );
-    const demand = (
-      await store.find('projections', {
-        plantId: plan.plantId,
-        year: plan.year,
-        week: plan.week,
-        type: ProjectionType.COMMERCIAL,
-      })
-    ).reduce((sum, row) => sum + Number(row.crates), 0);
+    const hasCommercialSnapshot = plan.commercialCratesSnapshot != null;
+    const demand = hasCommercialSnapshot
+      ? Number(plan.commercialCratesSnapshot)
+      : (
+          await store.find('projections', {
+            plantId: plan.plantId,
+            ...(plan.fruitId === null ? {} : { fruitId: plan.fruitId }),
+            year: plan.year,
+            week: plan.week,
+            type: ProjectionType.COMMERCIAL,
+          })
+        ).reduce((sum, row) => sum + Number(row.crates), 0);
     const target = days.reduce((sum, d) => sum + Number(d.targetCrates), 0);
     const plant = await store.get('plants', plan.plantId);
     ensure(plant, 'Plant not found', 404);
     return {
       ...plan,
+      commercialDemandSource: hasCommercialSnapshot
+        ? 'SNAPSHOT'
+        : 'LIVE_LEGACY',
       plantName: plant.name,
       plantDefaults: plantParameters(plant),
       parameterChanges: parameterChanges(
@@ -539,25 +564,37 @@ export class PlansService {
         if (target === PlanStatus.REJECTED)
           ensure(comment?.trim(), 'A rejection comment is required');
         if (target === PlanStatus.APPROVED) {
-          const approved = await store.find('plans', {
-            plantId: locked.plantId,
-            year: locked.year,
-            week: locked.week,
-          });
-          ensure(
-            !approved.some(
-              (p) =>
-                p.id !== id &&
-                p.fruitId === null &&
-                [
-                  PlanStatus.APPROVED,
-                  PlanStatus.IN_PROGRESS,
-                  PlanStatus.CLOSED,
-                ].includes(p.status),
-            ),
-            'Only one plan can be approved for this plant and week',
-            409,
+          const reservedPlans = (
+            await store.find('plans', {
+              plantId: locked.plantId,
+            })
+          ).filter(
+            (candidate) =>
+              candidate.id !== id &&
+              [
+                PlanStatus.APPROVED,
+                PlanStatus.IN_PROGRESS,
+                PlanStatus.CLOSED,
+              ].includes(candidate.status),
           );
+          const dates = new Set(
+            (await store.find('planDays', { planId: id })).map(
+              (day) => day.date,
+            ),
+          );
+          // Until lines and shifts exist, each planned date reserves the plant.
+          for (const reserved of reservedPlans) {
+            const conflicts = (
+              await store.find('planDays', { planId: reserved.id })
+            )
+              .filter((day) => dates.has(day.date))
+              .map((day) => day.date);
+            ensure(
+              conflicts.length === 0,
+              `Plant is already reserved by plan #${reserved.id} on ${conflicts.sort().join(', ')}`,
+              409,
+            );
+          }
         }
         await store.save('plans', {
           id,

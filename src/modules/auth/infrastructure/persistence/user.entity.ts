@@ -1,4 +1,12 @@
-import { Entity, Column, Index, JoinColumn, ManyToMany, ManyToOne, JoinTable } from 'typeorm';
+import {
+  Entity,
+  Column,
+  Index,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  JoinTable,
+} from 'typeorm';
 import type { Relation } from 'typeorm';
 import { BaseEntity } from '../../../../shared/infrastructure/persistence/base.entity';
 
@@ -16,11 +24,22 @@ export class UserEntity extends BaseEntity {
   @ManyToOne(() => PlantEntity, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'plantaId' })
   plant!: Relation<PlantEntity> | null;
-  @ManyToMany(() => PlantEntity)
+  @ManyToMany(() => PlantEntity, (plant) => plant.users, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   @JoinTable({
     name: 'usuario_planta',
-    joinColumn: { name: 'usuarioId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'plantaId', referencedColumnName: 'id' },
+    joinColumn: {
+      name: 'usuarioId',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_usuario_planta_usuario',
+    },
+    inverseJoinColumn: {
+      name: 'plantaId',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_usuario_planta_planta',
+    },
   })
   plants!: Relation<PlantEntity[]>;
   @Column({ name: 'nombre', type: 'varchar', length: 255 }) name!: string;

@@ -210,7 +210,41 @@
     "/api/plants": {
       "get": {
         "operationId": "PlantsController_list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -250,6 +284,59 @@
           }
         ],
         "summary": "List accessible plants",
+        "tags": [
+          "Plants"
+        ]
+      },
+      "post": {
+        "operationId": "PlantsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlantCatalogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Create a plant",
         "tags": [
           "Plants"
         ]
@@ -369,12 +456,155 @@
         "tags": [
           "Plants"
         ]
+      },
+      "delete": {
+        "operationId": "PlantsController_deactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Deactivate a plant without deleting its records",
+        "tags": [
+          "Plants"
+        ]
+      }
+    },
+    "/api/plants/{id}/catalog": {
+      "patch": {
+        "operationId": "PlantsController_updateCatalog",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlantCatalogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Edit plant catalog details and defaults",
+        "tags": [
+          "Plants"
+        ]
       }
     },
     "/api/fruits": {
       "get": {
         "operationId": "CatalogsController_fruits",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -414,6 +644,219 @@
           }
         ],
         "summary": "List fruits",
+        "tags": [
+          "Catalogs"
+        ]
+      },
+      "post": {
+        "operationId": "CatalogsController_createFruit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FruitCatalogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FruitResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Create a fruit and assign it to plants",
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/fruits/{id}": {
+      "get": {
+        "operationId": "CatalogsController_fruit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FruitResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Get a fruit, including inactive fruits for historical plans",
+        "tags": [
+          "Catalogs"
+        ]
+      },
+      "patch": {
+        "operationId": "CatalogsController_updateFruit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FruitCatalogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FruitResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Edit a fruit and its plant assignments",
+        "tags": [
+          "Catalogs"
+        ]
+      },
+      "delete": {
+        "operationId": "CatalogsController_deactivateFruit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
         "tags": [
           "Catalogs"
         ]
@@ -767,6 +1210,60 @@
       }
     },
     "/api/projections": {
+      "post": {
+        "description": "Replaces the existing projection while the week has no submitted or approved plan; otherwise returns 409.",
+        "operationId": "ProjectionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Register or replace a weekly projection from form rows",
+        "tags": [
+          "Projections"
+        ]
+      },
       "get": {
         "operationId": "ProjectionsController_list",
         "parameters": [
@@ -853,7 +1350,7 @@
             "session": []
           }
         ],
-        "summary": "Read immutable weekly projections",
+        "summary": "Read weekly projections",
         "tags": [
           "Projections"
         ]
@@ -861,7 +1358,7 @@
     },
     "/api/projections/import": {
       "post": {
-        "description": "One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. All quantities are crates (jabas), without conversions. Entire import is atomic; repeated imports return 409.",
+        "description": "One sheet, max 500 rows. Harvest columns: date (YYYY-MM-DD), quantity. Commercial columns: customerName, country, quantity. All quantities are crates (jabas), without conversions. Entire import is atomic; a repeated import replaces the projection unless the week has a submitted or approved plan (409).",
         "operationId": "ProjectionsController_import",
         "parameters": [],
         "requestBody": {
@@ -950,6 +1447,167 @@
         "summary": "Import one XLSX projection per plant, fruit, ISO week and type",
         "tags": [
           "Projections"
+        ]
+      }
+    },
+    "/api/plans/{id}": {
+      "patch": {
+        "operationId": "PlansController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Update a draft or rejected plan without changing its period",
+        "tags": [
+          "Plans"
+        ]
+      },
+      "delete": {
+        "operationId": "PlansController_discard",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Discard an unsubmitted or rejected plan",
+        "tags": [
+          "Plans"
+        ]
+      },
+      "get": {
+        "operationId": "PlansController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Role or plant access denied"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "Invalid state transition, duplicate or concurrent change"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "Get plan detail and execution progress",
+        "tags": [
+          "Plans"
         ]
       }
     },
@@ -1057,7 +1715,7 @@
             "session": []
           }
         ],
-        "summary": "Apply the official draft with daily staffing and parameter snapshot",
+        "summary": "Create an independent draft with daily targets by fruit",
         "tags": [
           "Plans"
         ]
@@ -1171,60 +1829,6 @@
         ]
       }
     },
-    "/api/plans/{id}": {
-      "get": {
-        "operationId": "PlansController_get",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PlanDetailsResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation failed"
-          },
-          "401": {
-            "description": "Authentication required"
-          },
-          "403": {
-            "description": "Role or plant access denied"
-          },
-          "404": {
-            "description": "Resource not found"
-          },
-          "409": {
-            "description": "Invalid state transition, duplicate or concurrent change"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "session": []
-          }
-        ],
-        "summary": "Get plan detail and execution progress",
-        "tags": [
-          "Plans"
-        ]
-      }
-    },
     "/api/plans/{id}/submit": {
       "post": {
         "operationId": "PlansController_submit",
@@ -1281,6 +1885,7 @@
     },
     "/api/plans/{id}/approve": {
       "post": {
+        "description": "Returns 409 when another approved, running or closed plan reserves any selected date at the same plant.",
         "operationId": "PlansController_approve",
         "parameters": [
           {
@@ -1327,7 +1932,7 @@
             "session": []
           }
         ],
-        "summary": "Approve a pending plan",
+        "summary": "Approve a pending plan when its plant dates are available",
         "tags": [
           "Plans"
         ]
@@ -3821,6 +4426,7 @@
           "role": {
             "type": "string",
             "enum": [
+              "ADMIN",
               "PLANIFICADOR",
               "SUBGERENTE",
               "JEFE_TURNO"
@@ -3829,6 +4435,12 @@
           "plantId": {
             "type": "object",
             "nullable": true
+          },
+          "plantIds": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
           }
         },
         "required": [
@@ -3837,7 +4449,8 @@
           "name",
           "email",
           "role",
-          "plantId"
+          "plantId",
+          "plantIds"
         ]
       },
       "CreateUserDto": {
@@ -3855,6 +4468,7 @@
           "role": {
             "type": "string",
             "enum": [
+              "ADMIN",
               "PLANIFICADOR",
               "SUBGERENTE",
               "JEFE_TURNO"
@@ -3862,6 +4476,13 @@
           },
           "plantId": {
             "type": "number"
+          },
+          "plantIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
           }
         },
         "required": [
@@ -3886,12 +4507,14 @@
             "type": "string"
           },
           "configurationCompletedAt": {
-            "format": "date-time",
-            "type": "string",
+            "type": "object",
             "nullable": true
           },
           "name": {
             "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
           },
           "cratesPerWorkerHour": {
             "type": "string"
@@ -3921,6 +4544,7 @@
           "updatedAt",
           "configurationCompletedAt",
           "name",
+          "isActive",
           "cratesPerWorkerHour",
           "maxWorkers",
           "shiftHours",
@@ -3928,6 +4552,20 @@
           "startTime",
           "efficiencyFactor",
           "volumeTolerancePercent"
+        ]
+      },
+      "PlantCatalogDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "ParameterOverridesDto": {
@@ -3973,13 +4611,47 @@
           },
           "name": {
             "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "plantIds": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
           }
         },
         "required": [
           "id",
           "createdAt",
           "updatedAt",
-          "name"
+          "name",
+          "isActive",
+          "plantIds"
+        ]
+      },
+      "FruitCatalogDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "plantIds": {
+            "minItems": 1,
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "plantIds"
         ]
       },
       "AreaResponse": {
@@ -4065,6 +4737,65 @@
             "type": "string"
           }
         }
+      },
+      "ProjectionRowDto": {
+        "type": "object",
+        "properties": {
+          "quantity": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "quantity"
+        ]
+      },
+      "CreateProjectionDto": {
+        "type": "object",
+        "properties": {
+          "plantId": {
+            "type": "number"
+          },
+          "fruitId": {
+            "type": "number"
+          },
+          "year": {
+            "type": "number"
+          },
+          "week": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "COSECHA",
+              "COMERCIAL"
+            ]
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectionRowDto"
+            }
+          }
+        },
+        "required": [
+          "plantId",
+          "fruitId",
+          "year",
+          "week",
+          "type",
+          "rows"
+        ]
       },
       "ProjectionResponse": {
         "type": "object",
@@ -4182,10 +4913,26 @@
       "CreatePlanDto": {
         "type": "object",
         "properties": {
-          "plantId": {
-            "type": "number"
+          "startDate": {
+            "type": "string",
+            "example": "2026-10-12"
           },
-          "fruitId": {
+          "dayCount": {
+            "type": "number",
+            "default": 5
+          },
+          "selectedDates": {
+            "example": [
+              "2026-10-12",
+              "2026-10-14",
+              "2026-10-17"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "plantId": {
             "type": "number"
           },
           "year": {
@@ -4209,7 +4956,6 @@
         },
         "required": [
           "plantId",
-          "fruitId",
           "year",
           "week",
           "harvestScenario",
@@ -4270,156 +5016,6 @@
           "defaultValue"
         ]
       },
-      "SimulatedAreaResponse": {
-        "type": "object",
-        "properties": {
-          "arrivedWorkers": {
-            "type": "object",
-            "nullable": true
-          },
-          "startingWorkers": {
-            "type": "object",
-            "nullable": true
-          },
-          "areaId": {
-            "type": "number"
-          },
-          "plannedWorkers": {
-            "type": "number"
-          },
-          "presentWorkers": {
-            "type": "object",
-            "nullable": true
-          }
-        },
-        "required": [
-          "arrivedWorkers",
-          "startingWorkers",
-          "areaId",
-          "plannedWorkers",
-          "presentWorkers"
-        ]
-      },
-      "SimulatedDayResponse": {
-        "type": "object",
-        "properties": {
-          "date": {
-            "type": "string"
-          },
-          "targetCrates": {
-            "type": "string"
-          },
-          "workers": {
-            "type": "number"
-          },
-          "hours": {
-            "type": "string"
-          },
-          "margin": {
-            "type": "object",
-            "nullable": true
-          },
-          "hasLowMargin": {
-            "type": "boolean"
-          },
-          "dayStatus": {
-            "type": "string"
-          },
-          "areas": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SimulatedAreaResponse"
-            }
-          }
-        },
-        "required": [
-          "date",
-          "targetCrates",
-          "workers",
-          "hours",
-          "margin",
-          "hasLowMargin",
-          "dayStatus",
-          "areas"
-        ]
-      },
-      "PlanTotalsResponse": {
-        "type": "object",
-        "properties": {
-          "targetCrates": {
-            "type": "string"
-          },
-          "commercialCrates": {
-            "type": "string"
-          },
-          "commercialGapCrates": {
-            "type": "string"
-          },
-          "commercialGapPercent": {
-            "type": "number"
-          },
-          "commercialCoverage": {
-            "type": "object",
-            "nullable": true
-          },
-          "peakWorkers": {
-            "type": "number"
-          },
-          "averageWorkers": {
-            "type": "number"
-          },
-          "operatingHours": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "targetCrates",
-          "commercialCrates",
-          "commercialGapCrates",
-          "commercialGapPercent",
-          "commercialCoverage",
-          "peakWorkers",
-          "averageWorkers",
-          "operatingHours"
-        ]
-      },
-      "SimulationResponse": {
-        "type": "object",
-        "properties": {
-          "plantDefaults": {
-            "$ref": "#/components/schemas/ParametersResponse"
-          },
-          "parameterChanges": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterChangeResponse"
-            }
-          },
-          "parametersSnapshot": {
-            "$ref": "#/components/schemas/ParametersResponse"
-          },
-          "hasModifiedParameters": {
-            "type": "boolean"
-          },
-          "days": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SimulatedDayResponse"
-            }
-          },
-          "totals": {
-            "$ref": "#/components/schemas/PlanTotalsResponse"
-          }
-        },
-        "required": [
-          "plantDefaults",
-          "parameterChanges",
-          "parametersSnapshot",
-          "hasModifiedParameters",
-          "days",
-          "totals"
-        ]
-      },
       "PlanDayAreaResponse": {
         "type": "object",
         "properties": {
@@ -4471,6 +5067,12 @@
       "WorkdayResponse": {
         "type": "object",
         "properties": {
+          "processedByFruit": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "initialEstimatedHours": {
             "type": "object",
             "nullable": true
@@ -4535,6 +5137,7 @@
           }
         },
         "required": [
+          "processedByFruit",
           "initialEstimatedHours",
           "expectedDailyCrates",
           "id",
@@ -4625,6 +5228,12 @@
           "targetCrates": {
             "type": "string"
           },
+          "fruitTargets": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "workers": {
             "type": "number"
           },
@@ -4682,6 +5291,7 @@
           "planId",
           "date",
           "targetCrates",
+          "fruitTargets",
           "workers",
           "hours",
           "adjustedHours",
@@ -4692,6 +5302,46 @@
           "margin",
           "hasLowMargin",
           "dayStatus"
+        ]
+      },
+      "PlanTotalsResponse": {
+        "type": "object",
+        "properties": {
+          "targetCrates": {
+            "type": "string"
+          },
+          "commercialCrates": {
+            "type": "string"
+          },
+          "commercialGapCrates": {
+            "type": "string"
+          },
+          "commercialGapPercent": {
+            "type": "number"
+          },
+          "commercialCoverage": {
+            "type": "object",
+            "nullable": true
+          },
+          "peakWorkers": {
+            "type": "number"
+          },
+          "averageWorkers": {
+            "type": "number"
+          },
+          "operatingHours": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "targetCrates",
+          "commercialCrates",
+          "commercialGapCrates",
+          "commercialGapPercent",
+          "commercialCoverage",
+          "peakWorkers",
+          "averageWorkers",
+          "operatingHours"
         ]
       },
       "PlanDetailsResponse": {
@@ -4712,7 +5362,8 @@
             "type": "number"
           },
           "fruitId": {
-            "type": "number"
+            "type": "object",
+            "nullable": true
           },
           "year": {
             "type": "number"
@@ -4765,6 +5416,19 @@
             "type": "object",
             "nullable": true
           },
+          "commercialCratesSnapshot": {
+            "type": "string",
+            "nullable": true,
+            "description": "Commercial crates captured on creation or explicit edit; null for legacy plans without a historical snapshot."
+          },
+          "commercialDemandSource": {
+            "type": "string",
+            "enum": [
+              "SNAPSHOT",
+              "LIVE_LEGACY"
+            ],
+            "description": "SNAPSHOT uses the saved commercial demand. LIVE_LEGACY uses current projections because historical demand is unavailable."
+          },
           "plantName": {
             "type": "string"
           },
@@ -4812,11 +5476,123 @@
           "approvedById",
           "approvedAt",
           "approvalComment",
+          "commercialCratesSnapshot",
+          "commercialDemandSource",
           "plantName",
           "startDate",
           "endDate",
           "plantDefaults",
           "parameterChanges",
+          "days",
+          "totals"
+        ]
+      },
+      "SimulatedAreaResponse": {
+        "type": "object",
+        "properties": {
+          "arrivedWorkers": {
+            "type": "object",
+            "nullable": true
+          },
+          "startingWorkers": {
+            "type": "object",
+            "nullable": true
+          },
+          "areaId": {
+            "type": "number"
+          },
+          "plannedWorkers": {
+            "type": "number"
+          },
+          "presentWorkers": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "arrivedWorkers",
+          "startingWorkers",
+          "areaId",
+          "plannedWorkers",
+          "presentWorkers"
+        ]
+      },
+      "SimulatedDayResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "targetCrates": {
+            "type": "string"
+          },
+          "workers": {
+            "type": "number"
+          },
+          "hours": {
+            "type": "string"
+          },
+          "margin": {
+            "type": "object",
+            "nullable": true
+          },
+          "hasLowMargin": {
+            "type": "boolean"
+          },
+          "dayStatus": {
+            "type": "string"
+          },
+          "areas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulatedAreaResponse"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "targetCrates",
+          "workers",
+          "hours",
+          "margin",
+          "hasLowMargin",
+          "dayStatus",
+          "areas"
+        ]
+      },
+      "SimulationResponse": {
+        "type": "object",
+        "properties": {
+          "plantDefaults": {
+            "$ref": "#/components/schemas/ParametersResponse"
+          },
+          "parameterChanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterChangeResponse"
+            }
+          },
+          "parametersSnapshot": {
+            "$ref": "#/components/schemas/ParametersResponse"
+          },
+          "hasModifiedParameters": {
+            "type": "boolean"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulatedDayResponse"
+            }
+          },
+          "totals": {
+            "$ref": "#/components/schemas/PlanTotalsResponse"
+          }
+        },
+        "required": [
+          "plantDefaults",
+          "parameterChanges",
+          "parametersSnapshot",
+          "hasModifiedParameters",
           "days",
           "totals"
         ]
@@ -4844,7 +5620,7 @@
             "additionalProperties": {
               "type": "integer"
             },
-            "description": "Counts across all states, respecting plant, fruit and week filters, before pagination"
+            "description": "Counts across all states, respecting plant and week filters, before pagination"
           }
         },
         "required": [
@@ -4869,6 +5645,12 @@
       "WorkdayListResponse": {
         "type": "object",
         "properties": {
+          "processedByFruit": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "initialEstimatedHours": {
             "type": "object",
             "nullable": true
@@ -4942,6 +5724,7 @@
           }
         },
         "required": [
+          "processedByFruit",
           "initialEstimatedHours",
           "expectedDailyCrates",
           "id",
@@ -5039,6 +5822,12 @@
           "targetCrates": {
             "type": "string"
           },
+          "fruitTargets": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "workers": {
             "type": "number"
           },
@@ -5065,6 +5854,7 @@
           "planId",
           "date",
           "targetCrates",
+          "fruitTargets",
           "workers",
           "hours",
           "adjustedHours",
@@ -5074,6 +5864,13 @@
       "ProgressRecordResponse": {
         "type": "object",
         "properties": {
+          "processedByFruit": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "object"
+            }
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -5132,6 +5929,7 @@
           }
         },
         "required": [
+          "processedByFruit",
           "type",
           "areaId",
           "staffChange",
@@ -5197,6 +5995,12 @@
       "WorkdayDetailsResponse": {
         "type": "object",
         "properties": {
+          "processedByFruit": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "initialEstimatedHours": {
             "type": "object",
             "nullable": true
@@ -5285,6 +6089,7 @@
           }
         },
         "required": [
+          "processedByFruit",
           "initialEstimatedHours",
           "expectedDailyCrates",
           "id",
@@ -5350,6 +6155,21 @@
           "attendance"
         ]
       },
+      "FruitCratesDto": {
+        "type": "object",
+        "properties": {
+          "fruitId": {
+            "type": "number"
+          },
+          "crates": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fruitId",
+          "crates"
+        ]
+      },
       "ProgressDto": {
         "type": "object",
         "properties": {
@@ -5373,6 +6193,13 @@
             "type": "number",
             "description": "Required for AVANCE"
           },
+          "processedByFruit": {
+            "description": "Processed cumulative quantity by fruit",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FruitCratesDto"
+            }
+          },
           "areaId": {
             "type": "number",
             "description": "Required for PERSONAL"
@@ -5394,6 +6221,13 @@
       "ProgressResultResponse": {
         "type": "object",
         "properties": {
+          "processedByFruit": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "object"
+            }
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -5461,6 +6295,7 @@
           }
         },
         "required": [
+          "processedByFruit",
           "type",
           "areaId",
           "staffChange",
@@ -5490,6 +6325,12 @@
           },
           "processedCrates": {
             "type": "number"
+          },
+          "processedByFruit": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FruitCratesDto"
+            }
           },
           "discardedCrates": {
             "type": "number"
@@ -5689,7 +6530,8 @@
             "type": "number"
           },
           "fruitId": {
-            "type": "number"
+            "type": "object",
+            "nullable": true
           },
           "date": {
             "type": "string"

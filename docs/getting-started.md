@@ -1,10 +1,14 @@
-# Packing API · Guía del MVP
+# Pura Fruit · Guía de la API existente
 
 La referencia interactiva se sirve en `/docs`; el contrato OpenAPI completo, con solicitudes, respuestas, enums y autenticación, está en `/openapi.json`. Todas las rutas de negocio tienen prefijo `/api`.
 
+## Entorno y alcance
+
+La interfaz existente está en `fru-front/` y el backend en `fruback/`. Iniciar backend/PostgreSQL con Docker Compose siguiendo el [README del backend](../README.md), y el frontend local con `pnpm dev` siguiendo su [README](../../fru-front/README.md). El frontend usa `API_MOCK=false` por defecto para comprobar persistencia y permisos reales. El [contrato de desarrollo](00_LEEME_PRIMERO.md) distingue el incremento actual de funciones futuras como revisiones formales, solver e integración ERP.
+
 ## Autenticación
 
-1. Crear el primer subgerente con el comando de bootstrap del README.
+1. En desarrollo local, usar una cuenta del seed descrita en el README; el bootstrap solo aplica si todavía no hay perfiles vinculados.
 2. Enviar `POST /api/auth/sign-in/email` con `{"email":"admin@example.com","password":"..."}`.
 3. Usar el `token` devuelto como `Authorization: Bearer <token>` en Scalar o clientes HTTP. El navegador también puede usar la cookie HttpOnly que devuelve Better Auth (`credentials: 'include'`).
 4. Consultar `GET /api/users/me` para obtener `id`, `authUserId`, `name`, `email`, `role` y `plantId`.
@@ -82,21 +86,24 @@ No se permite repetir fecha/cliente dentro del archivo ni importar por segunda v
 | Método | Ruta | Acción y permiso |
 |---|---|---|
 | POST | `/api/plans/simulate` | Calcula sin guardar; planificador |
-| POST | `/api/plans` | Aplica/reemplaza borrador o reaplica rechazado; planificador |
+| POST | `/api/plans` | Crea siempre un nuevo borrador independiente; planificador |
+| PATCH | `/api/plans/{id}` | Recalcula únicamente el borrador/rechazado indicado; planificador |
 | GET | `/api/plans` | Lista filtrada con detalles y totales |
 | GET | `/api/plans/{id}` | Días, personal por área, parámetros, alertas y ejecución |
 | POST | `/api/plans/{id}/submit` | BORRADOR → PENDIENTE; planificador |
 | POST | `/api/plans/{id}/approve` | PENDIENTE → APROBADO; subgerente |
 | POST | `/api/plans/{id}/reject` | PENDIENTE → RECHAZADO; subgerente, `comment` obligatorio |
 
-Aplicar o simular:
+Crear un borrador o simular (ejemplo de fechas futuras al 2026-10-19; ajustar año, semana y fechas al ejecutarlo):
 
 ```json
 {
   "plantId": 1,
-  "fruitId": 1,
   "year": 2026,
-  "week": 42,
+  "week": 44,
+  "startDate": "2026-10-27",
+  "dayCount": 2,
+  "selectedDates": ["2026-10-27", "2026-10-28"],
   "harvestScenario": "+10",
   "parameters": {
     "cratesPerWorkerHour": 5.9,
@@ -110,7 +117,11 @@ Aplicar o simular:
 }
 ```
 
-Escenarios: `PROYECTADA`, `+10`, `+20`, `-10`. Se requieren ambas proyecciones. Se crea un día por fecha cargada en la cosecha. `parameters` es obligatorio y contiene todos los valores finales. El frontend puede inicializarlo con los defaults de planta. El plan conserva el snapshot completo; `hasModifiedParameters` refleja diferencias reales al aplicar. El detalle devuelve `plantDefaults` y `parameterChanges` contra los defaults actuales.
+Escenarios: `PROYECTADA`, `+10`, `+20`, `-10`. Se requieren ambas proyecciones. La creación admite de 2 a 6 fechas únicas de lunes a sábado, en una semana desde la próxima semana; `startDate` coincide con la primera fecha seleccionada y `dayCount` con la cantidad. No es obligatorio seleccionar lunes. El período no cambia al editar por ID. `parameters` es obligatorio y contiene todos los valores finales. El frontend puede inicializarlo con los defaults de planta. El plan conserva el snapshot completo; `hasModifiedParameters` refleja diferencias reales al aplicar. El detalle devuelve `plantDefaults` y `parameterChanges` contra los defaults actuales.
+
+Cada POST crea un ID nuevo aunque coincidan planta, semana y fechas con un borrador anterior. Editar requiere `PATCH /api/plans/{id}`; no usar la semana para localizar implícitamente el plan que se va a sobrescribir. Los planes siguen compartiendo las fuentes de proyección por planta/semana. Cada creación o guardado explícito conserva el total comercial usado, por lo que editar otra proyección no cambia ese total guardado. Los planes antiguos sin snapshot mantienen un fallback a las fuentes actuales; no se inventan valores históricos. No hay todavía versiones independientes de las fuentes completas por plan.
+
+Aprobar reserva la planta completa para las fechas seleccionadas. Se permiten varios aprobados en la misma semana si sus fechas no se solapan; se rechaza con 409 una fecha ya comprometida por otro plan aprobado, en ejecución o cerrado. Los borradores sí pueden solaparse para comparar alternativas. No hay aún líneas/turnos modelados que permitan reservar capacidad parcial del mismo día.
 
 La lista incluye `statusCounts` antes de paginar y sin aplicar el filtro `status`, para los contadores de cada estado.
 
@@ -128,7 +139,7 @@ Filtros de lista: `plantId`, `fruitId`, `year`, `week`, `status`, `page`, `limit
 | PATCH | `/api/plan-days/{id}/hours` | Ajustar horas y motivo; jefe de turno |
 | POST | `/api/workdays/{id}/close` | Cerrar jornada; jefe de turno |
 
-Abrir: `planDayId`, `startedAt` opcional y `attendance: [{areaId, arrivedWorkers, startingWorkers}]`. Se deben incluir todas las áreas del día exactamente una vez; `startingWorkers` no puede superar `arrivedWorkers`. Se guarda `initialEstimatedHours`, y los presentes arrancan iguales a los que inician. La fecha de inicio corresponde al día programado en `America/Lima`; no puede estar en el futuro. Al omitirla se usa la hora actual. Abrir la primera jornada cambia el plan a `EN_EJECUCION`. Solo hay una jornada por día, incluso ante solicitudes simultáneas.
+Abrir: `planDayId`, `startedAt` opcional y `attendance: [{areaId, arrivedWorkers, startingWorkers}]`. Se deben incluir todas las áreas del día exactamente una vez; `startingWorkers` no puede superar `arrivedWorkers`. Se guarda `initialEstimatedHours`, y los presentes arrancan iguales a los que inician. La fecha de inicio corresponde al día programado en `America/Lima`. El modo demostración existente permite fechas futuras; no interpretarlo como una política de operación real. Al omitirla se usa la hora actual. Abrir la primera jornada cambia el plan a `EN_EJECUCION`. Solo hay una jornada por día, incluso ante solicitudes simultáneas.
 
 Cada registro recibe `type` y `recordedAt` con zona horaria, y solo los campos de su tipo:
 
@@ -152,7 +163,7 @@ La desviación de recepción usa las horas originales aprobadas. AVANCE genera a
 
 Ajuste: `{"adjustedHours":12,"reason":"PERSONAL_PRESENTE"}`. Motivos: `CAMBIO_VOLUMEN` o `PERSONAL_PRESENTE`. Solo es posible con jornada abierta; no requiere nueva aprobación ni cambia la meta. El exceso respecto de jornada + horas extra se informa como riesgo.
 
-Cierre: `workedHours`, `processedCrates`, `discardedCrates`, `looseKg` y `fixedKg`. `receivedCrates` es opcional; si se omite se conserva el último recibido o, como mínimo, lo procesado al cierre. No se admiten cantidades inferiores al último avance. Calcula `targetMet` y `difference`, que puede ser negativa. Se cierra el plan cuando todas sus jornadas están cerradas. No se implementa transferencia de fruta al siguiente día ni historial de ajustes.
+Cierre: `workedHours`, `processedCrates`, `discardedCrates`, `looseKg` y `fixedKg`, además de `processedByFruit: [{fruitId, crates}]` para jornadas de varias frutas. El desglose debe incluir cada fruta planificada exactamente una vez, sumar el total procesado y no disminuir respecto del último avance por fruta. Para una sola fruta, el backend puede inferir el desglose si se omite. `receivedCrates` es opcional; si se omite se conserva el último recibido o, como mínimo, lo procesado al cierre. No se admiten cantidades inferiores al último avance. Calcula `targetMet` y `difference`, que puede ser negativa. Se cierra el plan cuando todas sus jornadas están cerradas. No se implementa transferencia de fruta al siguiente día ni historial de ajustes.
 
 ## Alertas y dashboard
 
@@ -179,3 +190,9 @@ El Dockerfile separa compilación y dependencias de producción; la API corre co
 Para actualizar el contrato estático de Scalar: `pnpm build && pnpm docs:export`, con variables DB y Better Auth configuradas. No se publican documentos ni endpoints en servicios externos automáticamente.
 
 Referencias de implementación: [Better Auth](https://better-auth.com/docs/integrations/express), [Scalar para NestJS](https://scalar.com/docs-for/nestjs). Skills utilizadas: `better-auth-best-practices`, `create-auth`, `email-and-password-best-practices`, `better-auth-security-best-practices` y `scalar-docs`.
+
+## Demanda comercial guardada por plan
+
+Crear o editar explícitamente un borrador guarda `commercialCratesSnapshot`, el total comercial utilizado para calcularlo. Sus indicadores de demanda, cobertura y brecha usan ese valor: cambiar las proyecciones compartidas y recalcular otro borrador no cambia esos indicadores del plan anterior. `commercialDemandSource: SNAPSHOT` identifica esta lectura.
+
+Los planes anteriores a esta migración conservan `commercialCratesSnapshot: null` y `commercialDemandSource: LIVE_LEGACY`: sus indicadores comerciales usan las proyecciones actuales porque no se puede reconstruir honestamente la demanda histórica. No se rellenan snapshots retrospectivos. Editar explícitamente un borrador existente captura los valores actuales para ese plan; los planes aprobados permanecen sin modificación. El rollback de la migración se bloquea si ya existen snapshots guardados para evitar perder historia.

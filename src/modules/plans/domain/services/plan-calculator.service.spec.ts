@@ -41,6 +41,16 @@ describe('PlanCalculatorService', () => {
       service.calculateDay(1, { ...parameters, efficiencyFactor: '0' }),
     ).toThrow();
   });
+  it('rejects unrepresentable calculated hours with a corrective domain error', () => {
+    expect(() =>
+      service.calculateDay(1e9, {
+        ...parameters,
+        cratesPerWorkerHour: '0.0001',
+        efficiencyFactor: '0.1',
+        maxWorkers: 1,
+      }),
+    ).toThrow('Las horas calculadas superan el límite permitido');
+  });
   it('reparte todo el personal sin perder personas por redondeo', () => {
     for (const total of [0, 1, 10, 280, 300, 1200]) {
       const counts = Object.values(service.allocateWorkers(total));

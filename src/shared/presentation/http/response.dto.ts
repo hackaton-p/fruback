@@ -202,6 +202,19 @@ export class ParameterChangeResponse {
   @ApiProperty() defaultValue!: string;
 }
 export class PlanDetailsResponse extends PlanResponse {
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Commercial crates captured on creation or explicit edit; null for legacy plans without a historical snapshot.',
+  })
+  commercialCratesSnapshot!: string | null;
+  @ApiProperty({
+    enum: ['SNAPSHOT', 'LIVE_LEGACY'],
+    description:
+      'SNAPSHOT uses the saved commercial demand. LIVE_LEGACY uses current projections because historical demand is unavailable.',
+  })
+  commercialDemandSource!: 'SNAPSHOT' | 'LIVE_LEGACY';
   @ApiProperty() plantName!: string;
   @ApiProperty({ nullable: true }) startDate!: string | null;
   @ApiProperty({ nullable: true }) endDate!: string | null;

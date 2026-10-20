@@ -71,8 +71,7 @@ export class PlansController {
   @Post()
   @Roles(RoleName.PLANNER)
   @ApiOperation({
-    summary:
-      'Apply one plant-week draft from the commercial order with daily targets by fruit',
+    summary: 'Create an independent draft with daily targets by fruit',
   })
   @ApiCreatedResponse({ type: PlanDetailsResponse })
   apply(@Body() body: CreatePlanDto, @CurrentActor() actor: Actor) {
@@ -101,7 +100,11 @@ export class PlansController {
   @Post(':id/approve')
   @HttpCode(200)
   @Roles(RoleName.DEPUTY_MANAGER)
-  @ApiOperation({ summary: 'Approve a pending plan' })
+  @ApiOperation({
+    summary: 'Approve a pending plan when its plant dates are available',
+    description:
+      'Returns 409 when another approved, running or closed plan reserves any selected date at the same plant.',
+  })
   @ApiOkResponse({ type: PlanDetailsResponse })
   approve(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
     return this.service.transition(id, PlanStatus.APPROVED, actor);

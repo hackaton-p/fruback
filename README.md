@@ -4,22 +4,34 @@ Backend del MVP v2 (fruta únicamente en jabas): NestJS 11, TypeORM, PostgreSQL 
 
 Incluye autenticación por email/contraseña, permisos por rol y planta, configuración, catálogos, importación XLSX, simulación y aprobación de planes, ejecución diaria, alertas y dashboard semanal.
 
-## Inicio
+## Desarrollo del producto completo
+
+Este backend forma parte del proyecto existente **Pura Fruit**, junto con `https://github.com/hackaton-p/fru-front/` (Next.js 16 y React 19). El backend y PostgreSQL se levantan con el Compose de esta carpeta. El [frontend se ejecuta localmente con pnpm](https://github.com/hackaton-p/fru-front/README.md). Cada repositorio contiene su configuración y guía; no se necesitan archivos en la raíz del workspace.
+
+El [contrato de desarrollo](docs/00_LEEME_PRIMERO.md) distingue el incremento actual —planes independientes por semana, edición por ID y aprobación sin solapar fechas de planta— de la hoja de ruta futura. Validar la integración con API real (`API_MOCK=false`).
+
+El [registro del incremento](docs/implementation-log.md) resume cambios, migraciones, verificaciones disponibles y límites de entrega.
+
+## Iniciar el backend con Docker Compose
+
+Los comandos de esta sección se ejecutan dentro de `fruback/`.
 
 ```bash
-cp .env.example .env
+cp -n .env.example .env
 openssl rand -base64 48
 ```
 
-Configurar `.env`: pegar el valor generado en `BETTER_AUTH_SECRET`, definir `DB_PASSWORD`, `BETTER_AUTH_URL` y los orígenes del frontend en `TRUSTED_ORIGINS` (separados por coma). Desarrollo usa API `http://localhost:3000` y frontend `http://localhost:3001`.
+Configurar `.env`: pegar el valor generado en `BETTER_AUTH_SECRET`, definir `DB_PASSWORD`, `BETTER_AUTH_URL` y los orígenes del frontend en `TRUSTED_ORIGINS` (separados por coma). Conservar `NODE_ENV=development` para autenticación HTTP local. Desarrollo usa API `http://localhost:3000`, frontend `http://localhost:3001` y PostgreSQL `localhost:5433`. El puerto interno de PostgreSQL sigue siendo 5432. Si ya existe `.env`, revisar sus valores sin sobrescribirlo.
 
 ```bash
 docker compose up --build -d
+docker compose ps -a
+docker compose logs --tail=100 migrate api
 ```
 
 PostgreSQL inicia primero; el servicio `migrate` aplica migraciones y la API inicia después. Documentación interactiva en **http://localhost:3000/docs**, OpenAPI en **http://localhost:3000/openapi.json** y comprobación HTTP en `/api`.
 
-Crear el primer subgerente global después de migrar:
+Las migraciones actuales crean las cuentas de demostración de la siguiente sección: usar una de ellas para iniciar sesión desde el frontend local. El bootstrap siguiente es únicamente para una base sin ningún perfil vinculado; no ejecutarlo después del seed habitual:
 
 ```bash
 export BOOTSTRAP_EMAIL='admin@example.com'
@@ -59,18 +71,23 @@ pnpm seed:test-users
 
 Correos: `planner-test@purafruit.test`, `deputy-manager-test@purafruit.test`, `shift-manager-test@purafruit.test`. Contraseña para los tres: `Packing-test-password-2026`. El comando es idempotente: si un correo ya existe, lo omite. Requiere que exista al menos una planta (las del seed de migración, Piura/Sullana, sirven). No usar en producción.
 
-## Desarrollo local
+## Alternativa: desarrollar también la API localmente
+
+Solo si se necesita recarga del código del backend. Detener primero la API de Docker para liberar el puerto 3000. La configuración local usa `DB_HOST=localhost` y `DB_PORT=5433`, con las mismas credenciales que la base del Compose.
 
 ```bash
 pnpm install --frozen-lockfile
+docker compose stop api
 docker compose up -d db
 pnpm migration:run
-pnpm build
-pnpm auth:bootstrap
 pnpm start:dev
 ```
 
-`auth:bootstrap` lee las variables anteriores. El registro público está deshabilitado. Better Auth administra sesiones persistentes, cookies HttpOnly, contraseñas bcrypt y limitación de intentos en PostgreSQL. El token Bearer es un **token de sesión**, no un JWT propio. Login: `POST /api/auth/sign-in/email`; perfil de negocio: `GET /api/users/me`.
+El registro público está deshabilitado. Better Auth administra sesiones persistentes, cookies HttpOnly, contraseñas bcrypt y limitación de intentos en PostgreSQL. El token Bearer es un **token de sesión**, no un JWT propio. Login: `POST /api/auth/sign-in/email`; perfil de negocio: `GET /api/users/me`.
+
+## Detener y conservar datos
+
+Desde `fruback/`, `docker compose down` detiene el backend y conserva los datos. No usar `down -v` si se necesitan conservar. El nombre de proyecto predeterminado es `fruback` y su volumen es `fruback_postgres_data`. El antiguo entorno de la raíz utilizaba `purafruit_postgres_data`: ese volumen no se elimina ni se migra automáticamente. Si se necesita trasladar datos, hacerlo mediante copia y restauración explícitas. Antes de arrancar, detener cualquier entorno anterior que ocupe 3000 o 5433; no cambiar contraseñas de un volumen inicializado sin coordinar su contraseña real.
 
 ## Estructura
 
